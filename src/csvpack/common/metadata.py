@@ -129,8 +129,8 @@ def metadata_from_frame(
 ) -> CSVPackMeta:
     """Generate CSVPackMeta from pandas.DataFrame/polars.DataFrame."""
 
-    source = data_frame.__class__.__module__.split('.')[0]
-    version = getattr(__import__(source), '__version__', 'unknown')
+    source = data_frame.__class__.__module__.split(".")[0]
+    version = getattr(__import__(source), "__version__", "unknown")
 
     return CSVPackMeta.from_params(
         source.capitalize(),

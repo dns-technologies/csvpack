@@ -503,26 +503,27 @@ class TestCSVPackEdgeCases:
         assert len(df_result) == 5  # noqa: S101
         reader.close()
 
-    # def test_with_none_values(self):
-    #     """Test with None/NaN values."""
+    def test_with_none_values(self):
+        """Test with None/NaN values."""
 
-    #     df = pd.DataFrame(
-    #         {
-    #             "int_col": [1, None, 3, None, 5],
-    #             "str_col": ["a", None, "c", None, "e"],
-    #             "float_col": [1.5, None, 3.5, None, 5.5],
-    #         }
-    #     )
-    #     buffer = io.BytesIO()
-    #     writer = CSVPackWriter(fileobj=buffer)
-    #     writer.from_pandas(df)
-    #     buffer.seek(0)
-    #     reader = CSVPackReader(buffer)
-    #     df_result = reader.to_pandas()
-    #     assert pd.isna(df_result["int_col"].iloc[1])  # noqa: S101
-    #     assert pd.isna(df_result["str_col"].iloc[1])  # noqa: S101
-    #     assert pd.isna(df_result["float_col"].iloc[1])  # noqa: S101
-    #     reader.close()
+        df = pd.DataFrame(
+            {
+                "int_col": [1, None, 3, None, 5],
+                "str_col": ["a", None, "c", None, "e"],
+                "float_col": [1.5, None, 3.5, None, 5.5],
+            }
+        )
+        buffer = io.BytesIO()
+        writer = CSVPackWriter(fileobj=buffer)
+        writer.from_pandas(df)
+        buffer.seek(0)
+        reader = CSVPackReader(buffer)
+        df_result = reader.to_pandas()
+        df_result = df_result.convert_dtypes()
+        assert pd.isna(df_result["int_col"].iloc[1])  # noqa: S101
+        assert pd.isna(df_result["str_col"].iloc[1])  # noqa: S101
+        assert pd.isna(df_result["float_col"].iloc[1])  # noqa: S101
+        reader.close()
 
     def test_large_dataframe(self):
         """Test with larger DataFrame."""
