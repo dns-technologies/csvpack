@@ -520,7 +520,7 @@ class TestCSVPackEdgeCases:
         reader = CSVPackReader(buffer)
         df_result = reader.to_pandas()
         assert df_result["int_col"].isna().iloc[1]  # noqa: S101
-        assert df_result["str_col"].isna().iloc[1]  # noqa: S101
+        assert df_result["str_col"].map(pd.isna).iloc[1]   # noqa: S101
         assert df_result["float_col"].isna().iloc[1]  # noqa: S101
         reader.close()
 
