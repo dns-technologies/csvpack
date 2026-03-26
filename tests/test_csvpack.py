@@ -519,10 +519,9 @@ class TestCSVPackEdgeCases:
         buffer.seek(0)
         reader = CSVPackReader(buffer)
         df_result = reader.to_pandas()
-        df_result = df_result.convert_dtypes()
-        assert pd.isna(df_result["int_col"].iloc[1])  # noqa: S101
-        assert pd.isna(df_result["str_col"].iloc[1])  # noqa: S101
-        assert pd.isna(df_result["float_col"].iloc[1])  # noqa: S101
+        assert df_result["int_col"].isna().iloc[1]  # noqa: S101
+        assert df_result["str_col"].isna().iloc[1]  # noqa: S101
+        assert df_result["float_col"].isna().iloc[1]  # noqa: S101
         reader.close()
 
     def test_large_dataframe(self):
