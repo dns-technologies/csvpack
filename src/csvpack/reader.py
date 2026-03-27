@@ -191,6 +191,7 @@ class CSVPackReader:
                 self.compressed_length,
                 self.data_length,
                 self.compression_method,
+                self.metadata,
             )
 
         return self._str

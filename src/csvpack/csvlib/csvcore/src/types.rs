@@ -133,7 +133,7 @@ impl TypeConverter {
             return Ok(list_obj);
         }
 
-        let py_list = bound.downcast::<pyo3::types::PyList>()?;
+        let py_list = bound.cast::<pyo3::types::PyList>()?;
         let mut result = Vec::with_capacity(py_list.len());
         let is_numeric_type = inner_type == "int" || inner_type == "float";
 

@@ -187,7 +187,11 @@ reader.close()
 
 ```python
 import io
-from csvpack import CSVPackWriter, CompressionMethod
+from csvpack import (
+    CompressionMethod,
+    CSVPackMeta,
+    CSVPackWriter,
+)
 
 rows = [
     (1, 'Alice', 25),
@@ -195,11 +199,12 @@ rows = [
     (3, 'Charlie', 35)
 ]
 
-metadata = [
-    {'id': 'int'},
-    {'name': 'str'},
-    {'age': 'int'}
-]
+metadata = CSVPackMeta.from_params(
+    source="Python",
+    version="3.10",
+    columns=["id", "name", "age"],
+    dtypes=["int", "str", "int"],
+)
 
 buffer = io.BytesIO()
 writer = CSVPackWriter(

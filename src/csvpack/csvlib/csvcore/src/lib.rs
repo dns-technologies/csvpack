@@ -57,7 +57,7 @@ fn serialize_to_csv(
         return Ok(b.to_string().to_lowercase());
     }
 
-    if let Ok(py_bytes) = value.downcast::<pyo3::types::PyBytes>() {
+    if let Ok(py_bytes) = value.cast::<pyo3::types::PyBytes>() {
         let bytes = py_bytes.as_bytes();
         return serialize_bytes_to_hex(bytes);
     }
@@ -70,7 +70,7 @@ fn serialize_to_csv(
     }
 
     if value.is_instance_of::<pyo3::types::PyList>() {
-        let py_list = value.downcast::<pyo3::types::PyList>()?;
+        let py_list = value.cast::<pyo3::types::PyList>()?;
         let mut elements = Vec::new();
 
         for item in py_list.iter() {
@@ -81,7 +81,7 @@ fn serialize_to_csv(
     }
 
     if value.is_instance_of::<pyo3::types::PyDict>() {
-        let py_dict = value.downcast::<pyo3::types::PyDict>()?;
+        let py_dict = value.cast::<pyo3::types::PyDict>()?;
         let mut items = Vec::new();
 
         for (key, val) in py_dict.iter() {
@@ -119,7 +119,7 @@ fn serialize_list_element(
     }
 
     if value.is_instance_of::<pyo3::types::PyList>() {
-        let py_list = value.downcast::<pyo3::types::PyList>()?;
+        let py_list = value.cast::<pyo3::types::PyList>()?;
         let mut elements = Vec::new();
 
         for item in py_list.iter() {
@@ -130,7 +130,7 @@ fn serialize_list_element(
     }
 
     if value.is_instance_of::<pyo3::types::PyDict>() {
-        let py_dict = value.downcast::<pyo3::types::PyDict>()?;
+        let py_dict = value.cast::<pyo3::types::PyDict>()?;
         let mut items = Vec::new();
 
         for (key, val) in py_dict.iter() {
@@ -364,7 +364,7 @@ impl RustCsvWriter {
                     return serialize_to_csv(py, value);
                 }
                 
-                let py_list = value.downcast::<pyo3::types::PyList>()?;
+                let py_list = value.cast::<pyo3::types::PyList>()?;
                 let mut elements = Vec::new();
                 
                 for item in py_list.iter() {
@@ -598,7 +598,7 @@ impl Read for PyReader {
                 return Ok(0);
             }
 
-            let py_bytes = match bytes_obj.downcast::<PyBytes>() {
+            let py_bytes = match bytes_obj.cast::<PyBytes>() {
                 Ok(b) => b,
                 Err(e) => return Err(
                     std::io::Error::new(

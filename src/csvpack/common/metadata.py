@@ -120,7 +120,7 @@ Source: {self.source.capitalize()}
 Version: {self.version}
 Original Types: [{", ".join(self.source_types)}]
 Total Columns: {len(self.source_types)}
-Upload Timestamp: {self.timestamp.strftime("%Y-%m-%d %H:%M:%S")}
+Upload Timestamp: {self.timestamp.strftime("%Y-%m-%d %H:%M:%S")}\
 """
 
 

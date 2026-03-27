@@ -1,6 +1,6 @@
 [package]
 name = "csvcore"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 
 [lib]
@@ -8,7 +8,7 @@ name = "csvcore"
 crate-type = ["cdylib"]
 
 [dependencies]
-pyo3 = { version = "0.26.0", features = ["extension-module"] }
+pyo3 = { version = "0.28.2", features = ["extension-module"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 simd-json = { version = "0.13", features = ["serde_impl"] }
@@ -17,7 +17,7 @@ memchr = "2.6"
 encoding_rs = "0.8"
 
 [build-dependencies]
-pyo3-build-config = "0.26.0"
+pyo3-build-config = "0.28.2"
 
 [profile.release]
 opt-level = 3

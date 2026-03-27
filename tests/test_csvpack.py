@@ -598,8 +598,8 @@ class TestCSVPackRepr:
         reader = CSVPackReader(buffer)
         repr_str = repr(reader)
         assert "<CSVPack compressed dump>" in repr_str  # noqa: S101
-        assert "Total columns: 8" in repr_str  # noqa: S101
-        assert "Compression method: ZSTD" in repr_str  # noqa: S101
+        assert "Total Columns: 8" in repr_str  # noqa: S101
+        assert "Compression Method: ZSTD" in repr_str  # noqa: S101
         reader.close()
 
     def test_writer_repr(self, sample_dataframe):
@@ -610,7 +610,7 @@ class TestCSVPackRepr:
         writer.from_pandas(sample_dataframe)
         repr_str = repr(writer)
         assert "<CSVPack compressed dump>" in repr_str  # noqa: S101
-        assert "Total columns: 8" in repr_str  # noqa: S101
+        assert "Total Columns: 8" in repr_str  # noqa: S101
         writer.close()
 
 

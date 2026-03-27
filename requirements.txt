@@ -1,4 +1,4 @@
 --extra-index-url https://dns-technologies.github.io/dbhose-dev-pip/simple/
-light_compressor==0.1.0.dev5
+light_compressor==0.1.1.dev0
 pandas>=2.1.0
 polars>=0.20.31

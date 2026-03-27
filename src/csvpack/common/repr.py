@@ -1,5 +1,7 @@
 from light_compressor import CompressionMethod
 
+from .metadata import CSVPackMeta
+
 
 EMPTY_LINE = "├─────────────────┼─────────────────┤"
 END_LINE = "└─────────────────┴─────────────────┘"
@@ -69,6 +71,7 @@ def csvpack_repr(
     compressed_length: int,
     data_length: int,
     compression_method: CompressionMethod,
+    metadata: CSVPackMeta,
 ) -> str:
     """Generate string representation for CSVPack."""
 
@@ -79,10 +82,10 @@ def csvpack_repr(
         dtypes,
         f"<CSVPack compressed {dump_type}>",
         [
-            f"Total columns: {len(columns)}",
-            f"Compression method: {compression_method.name}",
-            f"Unpacked size: {data_length} bytes",
-            f"Compressed size: {compressed_length} bytes",
-            f"Compression rate: {round(dump_rate, 2)} %"
+            str(metadata),
+            f"Compression Method: {compression_method.name}",
+            f"Unpacked Size: {data_length} bytes",
+            f"Compressed Size: {compressed_length} bytes",
+            f"Compression Rate: {round(dump_rate, 2)} %"
         ],
     )

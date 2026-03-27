@@ -227,4 +227,5 @@ class CSVPackWriter:
             self.compressed_length,
             self.data_length,
             self.compression_method,
+            self.metadata,
         )
