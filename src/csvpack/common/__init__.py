@@ -1,1 +1,1 @@
-"""CSVPack common classes and modules."""
+"""CSVPack common classes, functions and modules."""

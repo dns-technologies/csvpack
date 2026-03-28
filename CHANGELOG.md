@@ -1,5 +1,11 @@
 # Version History
 
+## 0.1.0.dev1
+
+* Developer release (not public to pip)
+* Update depends light_compressor==0.1.1.dev1
+* Improve docstrings
+
 ## 0.1.0.dev0
 
 * Developer release (not public to pip)
