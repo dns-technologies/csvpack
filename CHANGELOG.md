@@ -6,6 +6,7 @@
 * Fix CSVPackWriter.`__init__`() without parameters
 * Fix CSVPackWriter.from_bytes() method
 * Add pandas.Series, polars.Series and polars.List into dtype.py
+* Add is_nan() function into csvcore for RustCsvReader and RustCsvWriter
 
 ## 0.1.0.dev1
 

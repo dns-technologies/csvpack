@@ -15,6 +15,21 @@ use parser::CsvParser;
 use types::TypeConverter;
 
 
+fn is_nan(py: Python<'_>, value: &Bound<'_, PyAny>) -> PyResult<bool> {
+    if let Ok(f) = value.extract::<f64>() {
+        return Ok(f.is_nan());
+    }
+
+    let math = py.import("math")?;
+    let isnan = math.getattr("isnan")?;
+
+    match isnan.call1((value,)) {
+        Ok(result) => Ok(result.extract::<bool>()?),
+        Err(_) => Ok(false),
+    }
+}
+
+
 fn get_encoding(name: &str) -> &'static Encoding {
     match name.to_lowercase().as_str() {
         "utf-8" | "utf8" => UTF_8,
@@ -398,6 +413,10 @@ impl RustCsvWriter {
         py: Python<'_>,
         value: &Bound<'_, PyAny>,
     ) -> PyResult<String> {
+        if value.is_none() || is_nan(py, value)? {
+            return Ok(String::new());
+        }
+
         serialize_to_csv(py, value)
     }
 
@@ -463,6 +482,11 @@ impl RustCsvWriter {
             } else {
                 None
             };
+
+            if is_nan(py, &item)? {
+                row_buffer.push(self.delimiter);
+                continue;
+            }
 
             let item_str = match col_type {
                 Some(t) => self.serialize_field(py, &item, t)?,
