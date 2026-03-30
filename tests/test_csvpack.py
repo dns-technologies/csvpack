@@ -509,7 +509,7 @@ class TestCSVPackEdgeCases:
         df = pd.DataFrame(
             {
                 "int_col": [1, None, 3, None, 5],
-                # "str_col": ["a", None, "c", None, "e"],
+                "str_col": ["a", None, "c", None, "e"],
                 # Note: String column is excluded from isna()
                 # checks due to pandas 3.0.1
                 # issues with scalar pd.NA detection.
@@ -524,7 +524,7 @@ class TestCSVPackEdgeCases:
         reader = CSVPackReader(buffer)
         df_result = reader.to_pandas()
         assert df_result["int_col"].isna().iloc[1]  # noqa: S101
-        # assert df_result["str_col"].isna().iloc[1]
+        assert df_result["str_col"].isna().iloc[1]  # noqa: S101
         assert df_result["float_col"].isna().iloc[1]  # noqa: S101
         reader.close()
 

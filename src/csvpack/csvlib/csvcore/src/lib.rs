@@ -458,7 +458,6 @@ impl RustCsvWriter {
             self.has_header &&
             !self.column_order.is_empty() {
             let mut i = 0;
-
             for col_name in &self.column_order {
                 if i > 0 {
                     row_buffer.push(self.delimiter);
@@ -467,7 +466,6 @@ impl RustCsvWriter {
                 row_buffer.extend_from_slice(&encoded);
                 i += 1;
             }
-
             row_buffer.extend_from_slice(self.line_terminator.as_bytes());
             self.headers_written = true;
         }
@@ -476,23 +474,23 @@ impl RustCsvWriter {
             if i > 0 {
                 row_buffer.push(self.delimiter);
             }
+
             let item = row.get_item(i)?;
             let col_type = if i < self.column_order.len() {
                 metadata.get(&self.column_order[i])
             } else {
                 None
             };
-
-            if is_nan(py, &item)? {
-                row_buffer.push(self.delimiter);
-                continue;
-            }
-
-            let item_str = match col_type {
-                Some(t) => self.serialize_field(py, &item, t)?,
-                None => self.value_to_string(py, &item)?,
+            let item_str = if is_nan(py, &item)? {
+                String::new()
+            } else if item.is_none() {
+                String::new()
+            } else {
+                match col_type {
+                    Some(t) => self.serialize_field(py, &item, t)?,
+                    None => self.value_to_string(py, &item)?,
+                }
             };
-
             row_buffer.extend(self.write_escaped_field(&item_str));
         }
 
