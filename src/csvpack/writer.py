@@ -42,12 +42,12 @@ class CSVPackWriter:
     compression_method: CompressionMethod
     compression_level: int
     s3_file: bool
-    csv_start: int
+    csv_start: int | None = 0
     csv_writer: CSVWriter | None = None
 
     def __init__(
         self,
-        fileobj: BufferedWriter | None,
+        fileobj: BufferedWriter | None = None,
         metadata: bytes | None = None,
         compression_method: CompressionMethod = CompressionMethod.ZSTD,
         compression_level: int = CompressionLevel.ZSTD_DEFAULT,
@@ -56,15 +56,18 @@ class CSVPackWriter:
         """Class initialization."""
 
         self.fileobj = fileobj
+        self.metadata = metadata
         self.compressed_length = Size.SEEK_SET
         self.data_length = -Size.SEEK_CUR
         self.compression_method = compression_method
         self.compression_level = compression_level
         self.s3_file = s3_file
-        self.csv_start = self.fileobj.tell()
 
-        if metadata:
-            self.init_metadata(metadata)
+        if self.fileobj:
+            self.csv_start = self.fileobj.tell()
+
+        if self.metadata:
+            self.init_metadata(self.metadata)
 
     @property
     def columns(self) -> list[str]:
@@ -165,6 +168,10 @@ class CSVPackWriter:
         if not self.metadata:
             raise Error.CSVPackMetadataError("Metadata not defined.")
 
+        if not self.csv_writer:
+            self.init_metadata(self.metadata)
+
+        self.csv_start = self.fileobj.tell()
         metadata_zlib = compress(bytes(self.metadata))
         metadata_crc = pack(Fmt.U_LONG, crc32(metadata_zlib))
         metadata_length = pack(Fmt.U_LONG, len(metadata_zlib))

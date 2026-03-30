@@ -1,5 +1,12 @@
 # Version History
 
+## 0.1.0.dev2
+
+* Developer release (not public to pip)
+* Fix CSVPackWriter.`__init__`() without parameters
+* Fix CSVPackWriter.from_bytes() method
+* Add pandas.Series, polars.Series and polars.List into dtype.py
+
 ## 0.1.0.dev1
 
 * Developer release (not public to pip)
