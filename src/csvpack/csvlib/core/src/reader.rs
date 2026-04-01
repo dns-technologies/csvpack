@@ -9,6 +9,7 @@ use crate::parser::{CsvParser, ReaderState};
 use crate::types::TypeConverter;
 use crate::PyReader;
 
+
 #[pyclass]
 pub struct CsvReaderIterator {
     parser: CsvParser,
@@ -26,6 +27,7 @@ pub struct CsvReaderIterator {
     current_row: Option<Vec<Py<PyAny>>>,
 }
 
+
 #[pymethods]
 impl CsvReaderIterator {
     #[new]
@@ -40,12 +42,10 @@ impl CsvReaderIterator {
     ) -> PyResult<Self> {
         let mut type_converter = TypeConverter::new();
         type_converter.init_python_objects(py)?;
-
         let delim = delimiter.unwrap_or_else(|| ",".to_string());
         let quote = quote_char.unwrap_or_else(|| "\"".to_string());
         let enc_name = encoding.unwrap_or_else(|| "utf-8".to_string());
         let encoding = crate::get_encoding(&enc_name);
-        
         let mut metadata_map = HashMap::new();
         let mut column_order = Vec::new();
 
@@ -93,6 +93,7 @@ impl CsvReaderIterator {
         mut slf: PyRefMut<'_, Self>,
         py: Python<'_>,
     ) -> PyResult<Option<Py<PyAny>>> {
+
         if slf.finished {
             return Ok(None);
         }
@@ -110,19 +111,16 @@ impl CsvReaderIterator {
         let mut reader = PyReader::new(fileobj)?;
 
         loop {
-            // Используем std::mem::take, чтобы временно забрать состояние
             let mut state = std::mem::take(&mut slf.state);
-            
             let result = slf.parser.read_row_from_buffer(
                 &mut reader,
                 &mut state,
             );
-            
+
             match result {
                 Ok(Some(row)) => {
-                    // Возвращаем состояние обратно
                     slf.state = state;
-                    
+
                     if slf.is_first_row && slf.has_header {
                         slf.headers = row;
                         slf.is_first_row = false;
@@ -132,10 +130,12 @@ impl CsvReaderIterator {
                     slf.is_first_row = false;
                     slf.row_num += 1;
                     slf.size_ref.store(slf.row_num as u64, Ordering::Relaxed);
-                    
                     let converted = slf.convert_row(py, row)?;
                     slf.current_row = Some(converted);
-                    let tuple = PyTuple::new(py, slf.current_row.take().unwrap())?;
+                    let tuple = PyTuple::new(
+                        py,
+                        slf.current_row.take().unwrap(),
+                    )?;
                     return Ok(Some(tuple.unbind().into()));
                 }
                 Ok(None) => {
@@ -145,18 +145,23 @@ impl CsvReaderIterator {
                 }
                 Err(e) => {
                     slf.state = state;
-                    return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(e));
+                    return Err(
+                        PyErr::new::<pyo3::exceptions::PyValueError, _>(e),
+                    );
                 }
             }
         }
     }
 
     fn tell(&self, py: Python<'_>) -> PyResult<u64> {
+
         if let Some(fileobj) = &self.fileobj {
             let obj = fileobj.bind(py);
             let pos = obj.call_method0("tell")?;
             let file_pos: u64 = pos.extract()?;
-            Ok(file_pos - (self.state.buffer.len() - self.state.pos_in_buffer) as u64)
+            Ok(file_pos - (
+                self.state.buffer.len() - self.state.pos_in_buffer) as u64
+            )
         } else {
             Ok(0)
         }
@@ -196,13 +201,16 @@ impl CsvReaderIterator {
             } else {
                 format!("col_{}", idx)
             };
-
             let col_type = self.metadata.get(&col_name);
             let py_value = if value.is_empty() {
                 py.None()
             } else {
                 match col_type {
-                    Some(t) => self.type_converter.convert_field(py, value, t)?,
+                    Some(t) => self.type_converter.convert_field(
+                        py,
+                        value,
+                        t,
+                    )?,
                     None => value.into_pyobject(py)?.unbind().into(),
                 }
             };

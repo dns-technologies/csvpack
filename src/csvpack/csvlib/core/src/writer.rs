@@ -8,6 +8,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use crate::constants::CHUNK_SIZE;
 use crate::{is_nan, serialize_to_csv};
 
+
 struct WriterState {
     delimiter: u8,
     quote_char: u8,
@@ -20,6 +21,7 @@ struct WriterState {
     pending: Vec<u8>,
 }
 
+
 #[pyclass]
 pub struct CsvWriterIterator {
     state: WriterState,
@@ -29,6 +31,7 @@ pub struct CsvWriterIterator {
     input_data: Vec<Vec<Py<PyAny>>>,
     current_index: usize,
 }
+
 
 #[pymethods]
 impl CsvWriterIterator {
@@ -44,7 +47,6 @@ impl CsvWriterIterator {
         let quote = quote_char.unwrap_or_else(|| "\"".to_string());
         let enc_name = encoding.unwrap_or_else(|| "utf-8".to_string());
         let encoding = crate::get_encoding(&enc_name);
-        
         let mut column_order = Vec::new();
 
         if let Some(meta_list) = metadata {
@@ -85,6 +87,7 @@ impl CsvWriterIterator {
         mut slf: PyRefMut<'_, Self>,
         py: Python<'_>,
     ) -> PyResult<Option<Py<PyBytes>>> {
+
         if slf.finished {
             return Ok(None);
         }
@@ -94,11 +97,9 @@ impl CsvWriterIterator {
         }
 
         while slf.current_index < slf.input_data.len() {
-            // Получаем индекс и значение, разрывая заимствование
             let idx = slf.current_index;
             let row = std::mem::replace(&mut slf.input_data[idx], Vec::new());
             slf.current_index += 1;
-            
             let row_bytes = slf.write_row_bytes(py, &row)?;
             slf.state.pending.extend_from_slice(&row_bytes);
             slf.size_ref.store(slf.current_index as u64, Ordering::Relaxed);
@@ -112,33 +113,39 @@ impl CsvWriterIterator {
         }
 
         slf.finished = true;
-        
+
         if !slf.state.pending.is_empty() {
             let chunk = std::mem::take(&mut slf.state.pending);
             return Ok(Some(PyBytes::new(py, &chunk).into()));
         }
-        
+
         Ok(None)
     }
 
-    fn feed_data(&mut self, py: Python<'_>, rows: &Bound<'_, PyAny>) -> PyResult<()> {
+    fn feed_data(
+        &mut self,
+        py: Python<'_>,
+        rows: &Bound<'_, PyAny>,
+    ) -> PyResult<()> {
         let iterator = rows.call_method0("__iter__")?;
-        
+
         loop {
             let next_item = match iterator.call_method0("__next__") {
                 Ok(item) => item,
                 Err(e) => {
-                    if e.is_instance_of::<pyo3::exceptions::PyStopIteration>(py) {
+                    if e.is_instance_of::<pyo3::exceptions::PyStopIteration>(
+                        py,
+                    ) {
                         break;
                     }
                     return Err(e);
                 }
             };
-            
+
             let row: Vec<Py<PyAny>> = next_item.extract()?;
             self.input_data.push(row);
         }
-        
+
         Ok(())
     }
 
@@ -146,6 +153,7 @@ impl CsvWriterIterator {
         self.state.pos
     }
 }
+
 
 impl CsvWriterIterator {
     fn write_row_bytes(
@@ -155,7 +163,9 @@ impl CsvWriterIterator {
     ) -> PyResult<Vec<u8>> {
         let mut row_buffer = Vec::new();
 
-        if !self.state.headers_written && self.state.has_header && !self.state.column_order.is_empty() {
+        if !self.state.headers_written &&
+            self.state.has_header &&
+            !self.state.column_order.is_empty() {
             for (i, col_name) in self.state.column_order.iter().enumerate() {
                 if i > 0 {
                     row_buffer.push(self.state.delimiter);
@@ -163,7 +173,9 @@ impl CsvWriterIterator {
                 let (encoded, _, _) = self.state.encoding.encode(col_name);
                 row_buffer.extend_from_slice(&encoded);
             }
-            row_buffer.extend_from_slice(self.state.line_terminator.as_bytes());
+            row_buffer.extend_from_slice(
+                self.state.line_terminator.as_bytes(),
+            );
             self.state.headers_written = true;
         }
 
@@ -171,7 +183,7 @@ impl CsvWriterIterator {
             if i > 0 {
                 row_buffer.push(self.state.delimiter);
             }
-            
+
             let item_bound = item.bind(py);
             let item_str = self.value_to_string(py, &item_bound)?;
             row_buffer.extend(self.write_escaped_field(&item_str));
@@ -187,22 +199,23 @@ impl CsvWriterIterator {
         py: Python<'_>,
         value: &Bound<'_, PyAny>,
     ) -> PyResult<String> {
+
         if value.is_none() {
             return Ok(String::new());
         }
-        
+
         if let Ok(f) = value.extract::<f64>() {
             if f.is_nan() {
                 return Ok(String::new());
             }
         }
-        
+
         if let Ok(is_nan) = is_nan(py, value) {
             if is_nan {
                 return Ok(String::new());
             }
         }
-        
+
         serialize_to_csv(py, value)
     }
 
@@ -211,7 +224,6 @@ impl CsvWriterIterator {
             || field.contains(self.state.quote_char as char)
             || field.contains('\n')
             || field.contains('\r');
-        
         let mut result = Vec::new();
 
         if needs_quoting {
