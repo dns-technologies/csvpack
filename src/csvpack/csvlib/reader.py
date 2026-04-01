@@ -1,24 +1,13 @@
-from collections.abc import (
-    Generator,
-    Iterator,
-)
+from collections.abc import Generator
 from io import BufferedReader
 from typing import Any
 
-from .csvcore import RustCsvReader
+from .core import CsvReaderIterator
 from ..common.repr import csvlib_repr
 
 
 class CSVReader:
-    """CSV dump reader."""
-
-    fileobj: BufferedReader
-    metadata: list[dict[str, str]]
-    delimiter: str
-    quote_char: str
-    encoding: str
-    has_header: bool
-    _reader: RustCsvReader
+    """CSV dump reader with lazy iterator."""
 
     def __init__(
         self,
@@ -37,7 +26,7 @@ class CSVReader:
         self.encoding = encoding
         self.has_header = has_header
         self.metadata = metadata or []
-        self._reader = RustCsvReader(
+        self._reader = CsvReaderIterator(
             fileobj=self.fileobj,
             metadata=self.metadata,
             has_header=self.has_header,
@@ -46,45 +35,35 @@ class CSVReader:
             encoding=self.encoding,
         )
 
-    def __iter__(self) -> Iterator[tuple[Any, ...]]:
+    def __iter__(self) -> Generator[tuple[Any, ...], None, None]:
         """Lazy iterator over rows."""
 
-        return self
+        return self._reader
 
     def __next__(self) -> tuple[Any, ...]:
         """Get next row as tuple."""
 
-        return tuple(self._reader.__next__())
+        return next(self._reader)
 
     @property
     def columns(self) -> list[str]:
         """Get column list."""
 
-        return [
-            column
-            for dct in self.metadata
-            for column, _ in dct.items()
-        ] or [
-            f"col_{num}" for num in range(self.num_columns)
-        ]
+        if self.metadata:
+            return [col for dct in self.metadata for col, _ in dct.items()]
+        return self._reader.get_headers()
 
     @property
     def dtypes(self) -> list[str]:
         """Get data type list."""
 
-        return [
-            dtype
-            for dct in self.metadata
-            for _, dtype in dct.items()
-        ] or [
-            "str" for _ in range(self.num_columns)
-        ]
+        return [dtype for dct in self.metadata for _, dtype in dct.items()]
 
     @property
     def num_columns(self) -> int:
         """Get number of columns."""
 
-        return len(self._reader.get_headers() or self.metadata)
+        return len(self.columns)
 
     @property
     def num_rows(self) -> int:
@@ -100,11 +79,8 @@ class CSVReader:
     def to_rows(self) -> Generator[list[list[Any]], None, None]:
         """Read all rows."""
 
-        try:
-            while row := self._reader.__next__():
-                yield row
-        except StopIteration:
-            return
+        for row in self._reader:
+            yield row
 
     def tell(self) -> int:
         """Return current position."""

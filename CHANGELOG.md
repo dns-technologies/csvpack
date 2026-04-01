@@ -1,5 +1,18 @@
 # Version History
 
+## 0.1.0.dev3
+
+* Developer release (not public to pip)
+* Change BUFFER_SIZE: usize = 8192 to CHUNK_SIZE: usize = 65536
+* Remove Sizes.BUFFER_SIZE constant
+* Remove CSVWriter.chunk_size parameter
+* Refactor rust code
+* Refactor CSVReader and CSVWriter
+* Rename csvcore -> core
+* Add CsvReaderIterator and CsvWriterIterator
+* Speed-up csv read and write operations
+* Improve pytests for new code
+
 ## 0.1.0.dev2
 
 * Developer release (not public to pip)

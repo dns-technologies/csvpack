@@ -107,7 +107,6 @@ class CSVPackWriter:
             self.metadata.quote_char,
             self.metadata.encoding,
             self.metadata.has_header,
-            Size.BUFFER_SIZE,
         )
 
     def from_rows(

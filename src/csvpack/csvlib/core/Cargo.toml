@@ -1,10 +1,10 @@
 [package]
-name = "csvcore"
+name = "core"
 version = "0.1.1"
 edition = "2021"
 
 [lib]
-name = "csvcore"
+name = "core"
 crate-type = ["cdylib"]
 
 [dependencies]

@@ -191,13 +191,14 @@ class TestCSV:
         writer = CSVWriter(
             fileobj=output,
             metadata=sample_metadata,
-            chunk_size=100,
         )
         rows = [sample_row for _ in range(100)]
         chunks = list(writer.from_rows(rows))
-        assert len(chunks) > 1  # noqa: S101
+        assert len(chunks) >= 1  # noqa: S101
         full_data = b"".join(chunks)
-        assert len(full_data) > 0  # noqa: S101
+        lines = full_data.split(b'\n')
+        assert b"start_month" in lines[0]  # noqa: S101
+        assert len(lines) >= 101  # noqa: S101
 
     def test_read_write_roundtrip(self, sample_metadata, sample_row):
         """Test write and read roundtrip."""

@@ -1,5 +1,5 @@
 [workspace]
-members = ["src/csvpack/csvlib/csvcore"]
+members = ["src/csvpack/csvlib/core"]
 resolver = "2"
 
 [workspace.package]

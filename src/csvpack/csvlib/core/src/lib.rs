@@ -9,9 +9,13 @@ mod constants;
 mod parser;
 mod types;
 mod json_parser;
+mod reader;
+mod writer;
 
-use constants::BUFFER_SIZE;
-use parser::CsvParser;
+use reader::CsvReaderIterator;
+use writer::CsvWriterIterator;
+use constants::CHUNK_SIZE;
+use parser::{CsvParser, ReaderState};
 use types::TypeConverter;
 
 
@@ -230,7 +234,7 @@ impl RustCsvReader {
             has_header: has_header.unwrap_or(true),
             headers: Vec::new(),
             reader: Some(PyReader::new(fileobj)?),
-            buffer: Vec::with_capacity(BUFFER_SIZE),
+            buffer: Vec::with_capacity(CHUNK_SIZE),
             pos_in_buffer: 0,
             row_num: 0,
             is_first_row: true,
@@ -249,13 +253,23 @@ impl RustCsvReader {
         };
 
         loop {
+            // Создаем состояние для парсера
+            let mut state = ReaderState {
+                buffer: std::mem::take(&mut self.buffer),
+                pos_in_buffer: self.pos_in_buffer,
+                eof: self.eof,
+            };
+            
             match self.parser.read_row_from_buffer(
                 reader,
-                &mut self.buffer,
-                &mut self.pos_in_buffer,
-                &mut self.eof,
+                &mut state,
             ) {
                 Ok(Some(row)) => {
+                    // Возвращаем состояние обратно
+                    self.buffer = state.buffer;
+                    self.pos_in_buffer = state.pos_in_buffer;
+                    self.eof = state.eof;
+                    
                     if self.is_first_row && self.has_header {
                         self.headers = row;
                         self.is_first_row = false;
@@ -268,6 +282,9 @@ impl RustCsvReader {
                     return Ok(Some(converted));
                 }
                 Ok(None) => {
+                    self.buffer = state.buffer;
+                    self.pos_in_buffer = state.pos_in_buffer;
+                    self.eof = state.eof;
                     self.eof = true;
                     return Ok(None);
                 }
@@ -641,8 +658,10 @@ impl Read for PyReader {
 
 
 #[pymodule]
-fn csvcore(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
+fn core(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<RustCsvReader>()?;
     m.add_class::<RustCsvWriter>()?;
+    m.add_class::<CsvReaderIterator>()?;
+    m.add_class::<CsvWriterIterator>()?;
     Ok(())
 }

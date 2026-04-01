@@ -5,7 +5,7 @@ include README.md
 recursive-include src/csvpack/csvlib/ *.pyi
 recursive-include src/csvpack/csvlib/ *.pyd
 
-prune src/csvpack/csvlib/csvcore/target
+prune src/csvpack/csvlib/core/target
 prune */target
 prune target
 

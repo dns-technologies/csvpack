@@ -3,7 +3,7 @@ from setuptools_rust import RustExtension
 
 setup(
     name="csvpack",
-    version="0.1.0.dev2",
+    version="0.1.0.dev3",
     description=(
         "Library for read and write CSV dumps."
     ),
@@ -16,8 +16,8 @@ setup(
     package_dir={"": "src"},
     rust_extensions=[
         RustExtension(
-            "csvpack.csvlib.csvcore",
-            path="src/csvpack/csvlib/csvcore/Cargo.toml",
+            "csvpack.csvlib.core",
+            path="src/csvpack/csvlib/core/Cargo.toml",
             debug=False,
         )
     ],

@@ -1,6 +1,8 @@
 """CSV Reader and Writer library."""
 
-from .csvcore import (
+from .core import (
+    CsvReaderIterator,
+    CsvWriterIterator,
     RustCsvReader,
     RustCsvWriter,
 )
@@ -10,7 +12,9 @@ from .writer import CSVWriter
 
 __all__ = (
     "CSVReader",
+    "CsvReaderIterator",
     "CSVWriter",
+    "CsvWriterIterator",
     "RustCsvReader",
     "RustCsvWriter",
 )
