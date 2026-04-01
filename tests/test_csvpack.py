@@ -56,11 +56,13 @@ def sample_metadata():
         has_header=True,
     )
 
+
 @pytest.fixture
 def sample_metadata_bytes(sample_metadata: CSVPackMeta):
     """Create sample metadata as bytes."""
 
     return sample_metadata.to_bytes()
+
 
 @pytest.fixture
 def sample_metadata_full():
@@ -122,6 +124,7 @@ def sample_metadata_full():
         has_header=True,
     )
 
+
 @pytest.fixture
 def sample_rows():
     """Create sample Python rows."""
@@ -159,6 +162,7 @@ def sample_rows():
         ),
     ]
 
+
 @pytest.fixture
 def sample_dataframe():
     """Create sample pandas DataFrame."""
@@ -183,6 +187,7 @@ def sample_dataframe():
             ],
         }
     )
+
 
 class TestCSVPack:
     """Tests for CSVPackReader and CSVPackWriter."""
@@ -562,7 +567,7 @@ class TestCSVPackEdgeCases:
             def read(self, size):
                 if self.pos >= len(self.data):
                     return b""
-                result = self.data[self.pos : self.pos + size]
+                result = self.data[self.pos: self.pos + size]
                 self.pos += len(result)
                 return result
 

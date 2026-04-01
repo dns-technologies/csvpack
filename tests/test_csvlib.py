@@ -611,9 +611,9 @@ class TestCSVEdgeCases:
         rows = [
             (1, "Smith, John", 'He said "Hello"', ["python", "csv", "test"]),
             (2, "O'Connor", "It's a test, with comma", ["data", "analysis"]),
-            (3, "Do, Jane", 'Field "quotes" and , comma', ["rust", "python"],),
+            (3, "Do, Jane", 'Field "quotes" and , comma', ["rust", "python"]),
             (4, "Williams", "No special chars", ["simple"]),
-            (5, "Lu, 'Tom'","Mixed \"quote\" & 'apostroph', comma", ["test"],),
+            (5, "Lu, 'Tom'", "Mixed \"quote\" & 'apostroph', comma", ["test"]),
         ]
         buffer = io.BytesIO()
         writer = CSVWriter(fileobj=buffer, metadata=metadata)
