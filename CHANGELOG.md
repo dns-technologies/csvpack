@@ -12,6 +12,7 @@
 * Add CsvReaderIterator and CsvWriterIterator
 * Speed-up csv read and write operations
 * Improve pytests for new code
+* Decomposite CSVPackWriter.from_bytes() method
 
 ## 0.1.0.dev2
 

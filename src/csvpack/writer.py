@@ -151,65 +151,96 @@ class CSVPackWriter:
     ) -> int:
         """Write CSV bytes into CSVPack format."""
 
-        if self.compression_method is CompressionMethod.NONE:
-            _compressor = None
-        elif isinstance(self.compression_method, CompressionMethod):
-            _compressor = self.compression_method.compressor
-        else:
+        def validate_state() -> None:
+            """Validate expected parameters."""
+
+            if not self.fileobj:
+                raise Error.CSVPackValueError("Fileobject not define.")
+            if not self.fileobj.writable():
+                raise Error.CSVPackModeError("Fileobject don't support write.")
+            if not self.metadata:
+                raise Error.CSVPackMetadataError("Metadata not defined.")
+
+        def get_compressor() -> CompressorType | None:
+            """Get current compressor."""
+
+            if self.compression_method is CompressionMethod.NONE:
+                return None
+
+            if isinstance(self.compression_method, CompressionMethod):
+                return self.compression_method.compressor(
+                    self.compression_level
+                )
+
             raise Error.CSVPackTypeError(
                 f"Unsupported compression method {self.compression_method}"
             )
 
-        if not self.fileobj:
-            raise Error.CSVPackValueError("Fileobject not define.")
-        if not self.fileobj.writable():
-            raise Error.CSVPackModeError("Fileobject don't support write.")
-        if not self.metadata:
-            raise Error.CSVPackMetadataError("Metadata not defined.")
+        def write_header() -> None:
+            """Write CSVPack header."""
 
-        if not self.csv_writer:
-            self.init_metadata(self.metadata)
+            if not self.csv_writer:
+                self.init_metadata(self.metadata)
 
-        self.csv_start = self.fileobj.tell()
-        metadata_zlib = compress(bytes(self.metadata))
-        metadata_crc = pack(Fmt.U_LONG, crc32(metadata_zlib))
-        metadata_length = pack(Fmt.U_LONG, len(metadata_zlib))
-        compression_method = pack(Fmt.U_CHAR, self.compression_method.value)
+            self.csv_start = self.fileobj.tell()
+            metadata_bytes = bytes(self.metadata)
+            metadata_zlib = compress(metadata_bytes)
+            metadata_crc = pack(Fmt.U_LONG, crc32(metadata_zlib))
+            metadata_length = pack(Fmt.U_LONG, len(metadata_zlib))
+            compression_method = pack(
+                Fmt.U_CHAR, self.compression_method.value
+            )
+            s3_marker = (
+                Signature.S3_FILE if self.s3_file else bytes(Size.S3_TAIL)
+            )
 
-        for data in (
-            Signature.HEADER,
-            metadata_crc,
-            metadata_length,
-            metadata_zlib,
-            compression_method,
-            Signature.S3_FILE if self.s3_file else bytes(Size.S3_TAIL),
-        ):
-            self.csv_start += self.fileobj.write(data)
+            for data in (
+                Signature.HEADER,
+                metadata_crc,
+                metadata_length,
+                metadata_zlib,
+                compression_method,
+                s3_marker,
+            ):
+                self.csv_start += self.fileobj.write(data)
 
-        if _compressor:
-            compressor: CompressorType = _compressor(self.compression_level)
-            bytes_data = compressor.send_chunks(bytes_data)
-        else:
-            compressor = None
+        def write_data() -> None:
+            """Write CSV data."""
 
-        for data in bytes_data:
-            self.fileobj.write(data)
+            compressor = get_compressor()
 
-        self.compressed_length = self.fileobj.tell() - self.csv_start
+            if compressor:
+                compressed = compressor.send_chunks(bytes_data)
 
-        if compressor:
-            self.data_length = compressor.decompressed_size
-        else:
-            self.data_length = self.compressed_length
+                for chunk in compressed:
+                    self.fileobj.write(chunk)
+                self.data_length = compressor.decompressed_size
+            else:
+                start_pos = self.fileobj.tell()
 
-        if not self.s3_file:
-            self.fileobj.seek(self.csv_start - Size.S3_TAIL)
+                for chunk in bytes_data:
+                    self.fileobj.write(chunk)
+                self.data_length = self.fileobj.tell() - start_pos
 
-        self.fileobj.write(pack(
-            Fmt.COMPRESS_LENGTH,
-            self.compressed_length,
-            self.data_length,
-        ))
+            self.compressed_length = self.fileobj.tell() - self.csv_start
+
+        def write_trailer() -> None:
+            """Write compress length and data length."""
+            if not self.s3_file:
+                self.fileobj.seek(self.csv_start - Size.S3_TAIL)
+
+            self.fileobj.write(
+                pack(
+                    Fmt.COMPRESS_LENGTH,
+                    self.compressed_length,
+                    self.data_length,
+                )
+            )
+
+        validate_state()
+        write_header()
+        write_data()
+        write_trailer()
         self.fileobj.flush()
         return self.tell()
 
