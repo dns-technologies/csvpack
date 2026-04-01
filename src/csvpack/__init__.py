@@ -19,9 +19,7 @@ from .common.errors import (
 from .common.metadata import CSVPackMeta
 from .csvlib import (
     CSVReader,
-    CsvReaderIterator,
     CSVWriter,
-    CsvWriterIterator,
     RustCsvReader,
     RustCsvWriter,
 )
@@ -43,9 +41,7 @@ __all__ = (
     "CSVPackValueError",
     "CSVPackWriter",
     "CSVReader",
-    "CsvReaderIterator",
     "CSVWriter",
-    "CsvWriterIterator",
     "RustCsvReader",
     "RustCsvWriter",
 )

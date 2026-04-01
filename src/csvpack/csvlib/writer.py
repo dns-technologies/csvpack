@@ -2,7 +2,7 @@ from collections.abc import Generator, Iterable
 from io import BufferedWriter
 from typing import Any
 
-from .core import CsvWriterIterator
+from .core import RustCsvWriter
 from ..common.repr import csvlib_repr
 
 
@@ -26,7 +26,7 @@ class CSVWriter:
         self.encoding = encoding
         self.has_header = has_header
         self.metadata = metadata or []
-        self._writer = CsvWriterIterator(
+        self._writer = RustCsvWriter(
             metadata=self.metadata,
             has_header=self.has_header,
             delimiter=self.delimiter,

@@ -23,7 +23,7 @@ struct WriterState {
 
 
 #[pyclass]
-pub struct CsvWriterIterator {
+pub struct RustCsvWriter {
     state: WriterState,
     size_ref: Arc<AtomicU64>,
     finished: bool,
@@ -34,7 +34,7 @@ pub struct CsvWriterIterator {
 
 
 #[pymethods]
-impl CsvWriterIterator {
+impl RustCsvWriter {
     #[new]
     fn new(
         metadata: Option<Vec<HashMap<String, String>>>,
@@ -59,7 +59,7 @@ impl CsvWriterIterator {
             }
         }
 
-        Ok(CsvWriterIterator {
+        Ok(RustCsvWriter {
             state: WriterState {
                 delimiter: delim.as_bytes()[0],
                 quote_char: quote.as_bytes()[0],
@@ -87,7 +87,6 @@ impl CsvWriterIterator {
         mut slf: PyRefMut<'_, Self>,
         py: Python<'_>,
     ) -> PyResult<Option<Py<PyBytes>>> {
-
         if slf.finished {
             return Ok(None);
         }
@@ -98,7 +97,7 @@ impl CsvWriterIterator {
 
         while slf.current_index < slf.input_data.len() {
             let idx = slf.current_index;
-            let row = std::mem::replace(&mut slf.input_data[idx], Vec::new());
+            let row = std::mem::take(&mut slf.input_data[idx]);
             slf.current_index += 1;
             let row_bytes = slf.write_row_bytes(py, &row)?;
             slf.state.pending.extend_from_slice(&row_bytes);
@@ -133,9 +132,7 @@ impl CsvWriterIterator {
             let next_item = match iterator.call_method0("__next__") {
                 Ok(item) => item,
                 Err(e) => {
-                    if e.is_instance_of::<pyo3::exceptions::PyStopIteration>(
-                        py,
-                    ) {
+                    if e.is_instance_of::<pyo3::exceptions::PyStopIteration>(py) {
                         break;
                     }
                     return Err(e);
@@ -155,7 +152,7 @@ impl CsvWriterIterator {
 }
 
 
-impl CsvWriterIterator {
+impl RustCsvWriter {
     fn write_row_bytes(
         &mut self,
         py: Python<'_>,
@@ -170,12 +167,12 @@ impl CsvWriterIterator {
                 if i > 0 {
                     row_buffer.push(self.state.delimiter);
                 }
+
                 let (encoded, _, _) = self.state.encoding.encode(col_name);
                 row_buffer.extend_from_slice(&encoded);
             }
-            row_buffer.extend_from_slice(
-                self.state.line_terminator.as_bytes(),
-            );
+
+            row_buffer.extend_from_slice(self.state.line_terminator.as_bytes());
             self.state.headers_written = true;
         }
 
@@ -199,7 +196,6 @@ impl CsvWriterIterator {
         py: Python<'_>,
         value: &Bound<'_, PyAny>,
     ) -> PyResult<String> {
-
         if value.is_none() {
             return Ok(String::new());
         }

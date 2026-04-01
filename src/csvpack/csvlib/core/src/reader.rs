@@ -11,7 +11,7 @@ use crate::PyReader;
 
 
 #[pyclass]
-pub struct CsvReaderIterator {
+pub struct RustCsvReader {
     parser: CsvParser,
     type_converter: TypeConverter,
     metadata: HashMap<String, String>,
@@ -29,7 +29,7 @@ pub struct CsvReaderIterator {
 
 
 #[pymethods]
-impl CsvReaderIterator {
+impl RustCsvReader {
     #[new]
     fn new(
         py: Python<'_>,
@@ -60,7 +60,7 @@ impl CsvReaderIterator {
             }
         }
 
-        Ok(CsvReaderIterator {
+        Ok(RustCsvReader {
             parser: CsvParser::new(
                 delim.as_bytes()[0],
                 quote.as_bytes()[0],
@@ -93,7 +93,6 @@ impl CsvReaderIterator {
         mut slf: PyRefMut<'_, Self>,
         py: Python<'_>,
     ) -> PyResult<Option<Py<PyAny>>> {
-
         if slf.finished {
             return Ok(None);
         }
@@ -107,7 +106,6 @@ impl CsvReaderIterator {
             Some(f) => f.bind(py),
             None => return Ok(None),
         };
-
         let mut reader = PyReader::new(fileobj)?;
 
         loop {
@@ -154,14 +152,13 @@ impl CsvReaderIterator {
     }
 
     fn tell(&self, py: Python<'_>) -> PyResult<u64> {
-
         if let Some(fileobj) = &self.fileobj {
             let obj = fileobj.bind(py);
             let pos = obj.call_method0("tell")?;
             let file_pos: u64 = pos.extract()?;
             Ok(file_pos - (
-                self.state.buffer.len() - self.state.pos_in_buffer) as u64
-            )
+                self.state.buffer.len() - self.state.pos_in_buffer
+            ) as u64)
         } else {
             Ok(0)
         }
@@ -185,7 +182,8 @@ impl CsvReaderIterator {
     }
 }
 
-impl CsvReaderIterator {
+
+impl RustCsvReader {
     fn convert_row(
         &self,
         py: Python<'_>,
@@ -201,6 +199,7 @@ impl CsvReaderIterator {
             } else {
                 format!("col_{}", idx)
             };
+
             let col_type = self.metadata.get(&col_name);
             let py_value = if value.is_empty() {
                 py.None()

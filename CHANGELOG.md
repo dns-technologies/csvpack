@@ -9,7 +9,6 @@
 * Refactor rust code
 * Refactor CSVReader and CSVWriter
 * Rename csvcore -> core
-* Add CsvReaderIterator and CsvWriterIterator
 * Speed-up csv read and write operations
 * Improve pytests for new code
 * Decomposite CSVPackWriter.from_bytes() method

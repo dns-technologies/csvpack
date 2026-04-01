@@ -2,7 +2,7 @@ from collections.abc import Generator
 from io import BufferedReader
 from typing import Any
 
-from .core import CsvReaderIterator
+from .core import RustCsvReader
 from ..common.repr import csvlib_repr
 
 
@@ -26,7 +26,7 @@ class CSVReader:
         self.encoding = encoding
         self.has_header = has_header
         self.metadata = metadata or []
-        self._reader = CsvReaderIterator(
+        self._reader = RustCsvReader(
             fileobj=self.fileobj,
             metadata=self.metadata,
             has_header=self.has_header,
