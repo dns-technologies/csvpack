@@ -64,6 +64,7 @@ def csvlib_repr(
         ],
     )
 
+
 def csvpack_repr(
     columns: list[str],
     dtypes: list[str],
