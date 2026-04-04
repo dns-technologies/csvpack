@@ -20,20 +20,20 @@ class CSVWriter:
     def __init__(
         self,
         metadata: list[dict[str, str]] | None = None,
-        fileobj: BufferedWriter | None = None,
         delimiter: str = ",",
         quote_char: str = '"',
         encoding: str = "utf-8",
         has_header: bool = True,
+        fileobj: BufferedWriter | None = None,
     ) -> None:
         """Class initialization."""
 
         self.metadata = metadata or []
-        self.fileobj = fileobj
         self.delimiter = delimiter
         self.quote_char = quote_char
         self.encoding = encoding
         self.has_header = has_header
+        self.fileobj = fileobj
         self._writer = RustCsvWriter(
             metadata=self.metadata,
             has_header=self.has_header,

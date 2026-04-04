@@ -7,7 +7,7 @@
 * Add CSVWriter.num_rows property method
 * Fix CSVWriter.`__repr__`() method
 * Swap CSVPackWriter metadata and fileobj initialization parameters
-* Swap CSVWriter metadata and fileobj initialization parameters
+* CSVWriter move fileobj parameter initialization parameters into tail
 * Update RustCsvWriter.pyi
 
 ## 0.1.0.dev3

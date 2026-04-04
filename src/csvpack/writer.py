@@ -179,11 +179,11 @@ class CSVPackWriter:
 
         self.csv_writer = CSVWriter(
             self.metadata.csv_metadata,
-            self.fileobj,
             self.metadata.delimiter,
             self.metadata.quote_char,
             self.metadata.encoding,
             self.metadata.has_header,
+            self.fileobj,
         )
 
     def from_rows(
