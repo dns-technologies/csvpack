@@ -297,7 +297,9 @@ class TestCSVPack:
         for method in methods:
             buffer = io.BytesIO()
             writer = CSVPackWriter(
-                fileobj=buffer, compression_method=method, compression_level=3
+                fileobj=buffer,
+                compression_method=method,
+                compression_level=3,
             )
             writer.from_pandas(sample_dataframe)
             assert buffer.tell() > 0  # noqa: S101
@@ -328,7 +330,7 @@ class TestCSVPack:
         assert len(df_result) == len(sample_dataframe)  # noqa: S101
         reader.close()
 
-    def test_metadata_properties(self, sample_dataframe):
+    def test_metadata_properties(self, sample_dataframe: pd.DataFrame):
         """Test metadata properties."""
 
         buffer = io.BytesIO()
@@ -515,10 +517,6 @@ class TestCSVPackEdgeCases:
             {
                 "int_col": [1, None, 3, None, 5],
                 "str_col": ["a", None, "c", None, "e"],
-                # Note: String column is excluded from isna()
-                # checks due to pandas 3.0.1
-                # issues with scalar pd.NA detection.
-                # The roundtrip still works correctly.
                 "float_col": [1.5, None, 3.5, None, 5.5],
             }
         )
@@ -545,7 +543,8 @@ class TestCSVPackEdgeCases:
         )
         buffer = io.BytesIO()
         writer = CSVPackWriter(
-            fileobj=buffer, compression_method=CompressionMethod.LZ4
+            fileobj=buffer,
+            compression_method=CompressionMethod.LZ4,
         )
         writer.from_pandas(df)
         buffer.seek(0)

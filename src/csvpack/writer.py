@@ -35,8 +35,8 @@ from .csvlib import CSVWriter
 class CSVPackWriter:
     """Class for write CSVPack format."""
 
-    fileobj: BufferedWriter | None
     metadata: CSVPackMeta | None = None
+    fileobj: BufferedWriter | None
     compressed_length: int
     data_length: int
     compression_method: CompressionMethod
@@ -47,16 +47,16 @@ class CSVPackWriter:
 
     def __init__(
         self,
-        fileobj: BufferedWriter | None = None,
         metadata: bytes | None = None,
+        fileobj: BufferedWriter | None = None,
         compression_method: CompressionMethod = CompressionMethod.ZSTD,
         compression_level: int = CompressionLevel.ZSTD_DEFAULT,
         s3_file: bool = False,
     ) -> None:
         """Class initialization."""
 
-        self.fileobj = fileobj
         self.metadata = metadata
+        self.fileobj = fileobj
         self.compressed_length = Size.SEEK_SET
         self.data_length = -Size.SEEK_CUR
         self.compression_method = compression_method
