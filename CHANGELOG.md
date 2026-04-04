@@ -1,5 +1,13 @@
 # Version History
 
+## 0.1.0.dev4
+
+* Developer release (not public to pip)
+* Add RustCsvWriter.row_count()
+* Add CSVWriter.num_rows property method
+* Fix CSVWriter.`__repr__`() method
+* Update RustCsvWriter.pyi
+
 ## 0.1.0.dev3
 
 * Developer release (not public to pip)

@@ -126,3 +126,11 @@ class RustCsvWriter:
             Total number of bytes produced so far.
         """
         ...
+
+    def row_count(self) -> int:
+        """Get number of rows read so far.
+
+        Returns:
+            Number of rows returned by __next__ (excluding header).
+        """
+        ...

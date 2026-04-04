@@ -51,6 +51,12 @@ class CSVWriter:
         """Get number of columns."""
         return len(self.metadata)
 
+    @property
+    def num_rows(self) -> int:
+        """Get number of rows read so far."""
+
+        return self._writer.row_count()
+
     def from_rows(
         self,
         rows: Iterable[list[Any] | tuple[Any, ...]],
@@ -89,6 +95,6 @@ class CSVWriter:
             self.columns,
             self.dtypes,
             self.num_columns,
-            0,
+            self.num_rows,
             "writer",
         )

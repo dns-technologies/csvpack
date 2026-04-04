@@ -17,6 +17,7 @@ struct WriterState {
     has_header: bool,
     headers_written: bool,
     pos: u64,
+    row_count: u64,
     encoding: &'static Encoding,
     pending: Vec<u8>,
 }
@@ -68,6 +69,7 @@ impl RustCsvWriter {
                 has_header: has_header.unwrap_or(true),
                 headers_written: false,
                 pos: 0,
+                row_count: 0,
                 encoding,
                 pending: Vec::with_capacity(CHUNK_SIZE),
             },
@@ -141,6 +143,7 @@ impl RustCsvWriter {
 
             let row: Vec<Py<PyAny>> = next_item.extract()?;
             self.input_data.push(row);
+            self.state.row_count += 1;
         }
 
         Ok(())
@@ -148,6 +151,10 @@ impl RustCsvWriter {
 
     fn tell(&self) -> u64 {
         self.state.pos
+    }
+
+    fn row_count(&self) -> u64 {
+        self.state.row_count
     }
 }
 
