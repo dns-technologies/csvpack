@@ -178,8 +178,8 @@ class CSVPackWriter:
             raise Error.CSVPackMetadataError("Metadata object error.")
 
         self.csv_writer = CSVWriter(
-            self.fileobj,
             self.metadata.csv_metadata,
+            self.fileobj,
             self.metadata.delimiter,
             self.metadata.quote_char,
             self.metadata.encoding,

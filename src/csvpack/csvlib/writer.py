@@ -9,10 +9,18 @@ from ..common.repr import csvlib_repr
 class CSVWriter:
     """CSV dump writer with lazy iterator."""
 
+    metadata: list[dict[str, str]]
+    fileobj: BufferedWriter | None
+    delimiter: str
+    quote_char: str
+    encoding: str
+    has_header: bool
+    _writer: RustCsvWriter
+
     def __init__(
         self,
-        fileobj: BufferedWriter | None = None,
         metadata: list[dict[str, str]] | None = None,
+        fileobj: BufferedWriter | None = None,
         delimiter: str = ",",
         quote_char: str = '"',
         encoding: str = "utf-8",
@@ -20,12 +28,12 @@ class CSVWriter:
     ) -> None:
         """Class initialization."""
 
+        self.metadata = metadata or []
         self.fileobj = fileobj
         self.delimiter = delimiter
         self.quote_char = quote_char
         self.encoding = encoding
         self.has_header = has_header
-        self.metadata = metadata or []
         self._writer = RustCsvWriter(
             metadata=self.metadata,
             has_header=self.has_header,

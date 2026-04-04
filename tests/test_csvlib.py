@@ -135,7 +135,7 @@ def reader(sample_metadata, sample_row):
     """Create reader with sample data."""
 
     buffer = io.BytesIO()
-    writer = CSVWriter(fileobj=buffer, metadata=sample_metadata)
+    writer = CSVWriter(metadata=sample_metadata, fileobj=buffer)
     writer.write([sample_row])
     buffer.seek(0)
     return CSVReader(
@@ -153,7 +153,7 @@ class TestCSV:
         """Test basic write operation."""
 
         output = io.BytesIO()
-        writer = CSVWriter(fileobj=output, metadata=sample_metadata)
+        writer = CSVWriter(metadata=sample_metadata, fileobj=output)
         writer.write([sample_row])
         result = output.getvalue().decode("utf-8")
         assert "start_month" in result  # noqa: S101
@@ -167,7 +167,7 @@ class TestCSV:
         """Test writing multiple rows."""
 
         output = io.BytesIO()
-        writer = CSVWriter(fileobj=output, metadata=sample_metadata)
+        writer = CSVWriter(metadata=sample_metadata, fileobj=output)
         writer.write([sample_row, sample_row])
         result = output.getvalue().decode("utf-8")
         lines = result.strip().split("\n")
@@ -177,7 +177,7 @@ class TestCSV:
         """Test from_rows method."""
 
         output = io.BytesIO()
-        writer = CSVWriter(fileobj=output, metadata=sample_metadata)
+        writer = CSVWriter(metadata=sample_metadata, fileobj=output)
         rows = [sample_row, sample_row]
         writer.write(rows)
         result = output.getvalue().decode("utf-8")
@@ -189,8 +189,8 @@ class TestCSV:
 
         output = io.BytesIO()
         writer = CSVWriter(
-            fileobj=output,
             metadata=sample_metadata,
+            fileobj=output,
         )
         rows = [sample_row for _ in range(100)]
         chunks = list(writer.from_rows(rows))
@@ -204,7 +204,7 @@ class TestCSV:
         """Test write and read roundtrip."""
 
         buffer = io.BytesIO()
-        writer = CSVWriter(fileobj=buffer, metadata=sample_metadata)
+        writer = CSVWriter(metadata=sample_metadata, fileobj=buffer)
         writer.write([sample_row])
         buffer.seek(0)
         reader = CSVReader(
@@ -229,7 +229,7 @@ class TestCSV:
         with tempfile.NamedTemporaryFile(
             mode="wb+", suffix=".csv", delete=False
         ) as tmp:
-            writer = CSVWriter(fileobj=tmp, metadata=sample_metadata)
+            writer = CSVWriter(metadata=sample_metadata, fileobj=tmp)
             writer.write([sample_row])
             writer.close()
 
@@ -255,7 +255,7 @@ class TestCSVWithLists:
         """Test writing rows with lists."""
 
         output = io.BytesIO()
-        writer = CSVWriter(fileobj=output, metadata=metadata_with_lists)
+        writer = CSVWriter(metadata=metadata_with_lists, fileobj=output)
         writer.write([row_with_lists])
         result = output.getvalue().decode("utf-8")
         assert "['John','Jane','Bob']" in result  # noqa: S101
@@ -263,12 +263,14 @@ class TestCSVWithLists:
         assert "['2024-10-01 10:00:00','2024-10-02 14:30:00']" in result  # noqa: S101
 
     def test_read_write_list_roundtrip(
-        self, metadata_with_lists, row_with_lists
+        self,
+        metadata_with_lists,
+        row_with_lists,
     ):
         """Test roundtrip with lists."""
 
         buffer = io.BytesIO()
-        writer = CSVWriter(fileobj=buffer, metadata=metadata_with_lists)
+        writer = CSVWriter(metadata=metadata_with_lists, fileobj=buffer)
         writer.write([row_with_lists])
         buffer.seek(0)
         reader = CSVReader(
@@ -380,7 +382,7 @@ class TestCSVEdgeCases:
         metadata = [{"id": "int"}, {"name": "str"}]
         row = (None, None)
         buffer = io.BytesIO()
-        writer = CSVWriter(fileobj=buffer, metadata=metadata)
+        writer = CSVWriter(metadata=metadata, fileobj=buffer)
         writer.write([row])
         buffer.seek(0)
         reader = CSVReader(
@@ -400,7 +402,7 @@ class TestCSVEdgeCases:
         metadata = [{"name": "str"}]
         row = ("",)
         buffer = io.BytesIO()
-        writer = CSVWriter(fileobj=buffer, metadata=metadata)
+        writer = CSVWriter(metadata=metadata, fileobj=buffer)
         writer.write([row])
         buffer.seek(0)
         reader = CSVReader(
@@ -419,7 +421,7 @@ class TestCSVEdgeCases:
         metadata = [{"text": "str"}]
         row = ('Hello, "World"!',)
         buffer = io.BytesIO()
-        writer = CSVWriter(fileobj=buffer, metadata=metadata)
+        writer = CSVWriter(metadata=metadata, fileobj=buffer)
         writer.write([row])
         buffer.seek(0)
         reader = CSVReader(
@@ -437,7 +439,7 @@ class TestCSVEdgeCases:
         metadata = [{"data": "list[list[int]]"}]
         row = ([[1, 2], [3, 4, 5]],)
         buffer = io.BytesIO()
-        writer = CSVWriter(fileobj=buffer, metadata=metadata)
+        writer = CSVWriter(metadata=metadata, fileobj=buffer)
         writer.write([row])
         buffer.seek(0)
         reader = CSVReader(
@@ -456,7 +458,7 @@ class TestCSVEdgeCases:
         metadata = [{"id": "int"}, {"value": "str"}, {"name": "str"}]
         row = (1, None, "")
         buffer = io.BytesIO()
-        writer = CSVWriter(fileobj=buffer, metadata=metadata)
+        writer = CSVWriter(metadata=metadata, fileobj=buffer)
         writer.write([row])
         result = buffer.getvalue().decode("utf-8")
         lines = result.strip().split("\n")
@@ -519,7 +521,7 @@ class TestCSVEdgeCases:
             (5, "start", None, None),
         ]
         buffer = io.BytesIO()
-        writer = CSVWriter(fileobj=buffer, metadata=metadata)
+        writer = CSVWriter(metadata=metadata, fileobj=buffer)
         writer.write(rows)
         result = buffer.getvalue().decode("utf-8")
         lines = result.strip().split("\n")
@@ -573,7 +575,7 @@ class TestCSVEdgeCases:
             ("Field with \"double\" and 'single' quotes, and comma",),
         ]
         buffer = io.BytesIO()
-        writer = CSVWriter(fileobj=buffer, metadata=metadata)
+        writer = CSVWriter(metadata=metadata, fileobj=buffer)
         writer.write(rows)
         result = buffer.getvalue().decode("utf-8")
         lines = result.strip().split("\n")
@@ -616,7 +618,7 @@ class TestCSVEdgeCases:
             (5, "Lu, 'Tom'", "Mixed \"quote\" & 'apostroph', comma", ["test"]),
         ]
         buffer = io.BytesIO()
-        writer = CSVWriter(fileobj=buffer, metadata=metadata)
+        writer = CSVWriter(metadata=metadata, fileobj=buffer)
         writer.write(rows)
         buffer.seek(0)
         reader = CSVReader(
@@ -652,7 +654,7 @@ class TestCSVEdgeCases:
             (4, b'\x89PNG\r\n\x1a\n', b'PNG header'),
         ]
         buffer = io.BytesIO()
-        writer = CSVWriter(fileobj=buffer, metadata=metadata)
+        writer = CSVWriter(metadata=metadata, fileobj=buffer)
         writer.write(rows)
         result = buffer.getvalue().decode("utf-8")
         assert "\\xdeadbeef" in result  # noqa: S101
@@ -684,7 +686,7 @@ class TestCSVEdgeCases:
             (5, None, None),
         ]
         buffer2 = io.BytesIO()
-        writer2 = CSVWriter(fileobj=buffer2, metadata=metadata)
+        writer2 = CSVWriter(metadata=metadata, fileobj=buffer2)
         writer2.write(rows_with_none)
         buffer2.seek(0)
         reader2 = CSVReader(
