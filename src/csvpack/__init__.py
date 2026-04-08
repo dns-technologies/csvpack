@@ -46,4 +46,4 @@ __all__ = (
     "RustCsvWriter",
 )
 __author__ = "0xMihalich"
-__version__ = "0.1.0.dev4"
+__version__ = "0.1.0.dev5"

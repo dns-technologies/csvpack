@@ -1,5 +1,11 @@
 # Version History
 
+## 0.1.0.dev5
+
+* Developer release (not public to pip)
+* Change pyo3 revision to 0.28.3
+* Update depends light-compressor==0.1.1.dev2
+
 ## 0.1.0.dev4
 
 * Developer release (not public to pip)

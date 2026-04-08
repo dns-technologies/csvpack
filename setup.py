@@ -3,7 +3,7 @@ from setuptools_rust import RustExtension
 
 setup(
     name="csvpack",
-    version="0.1.0.dev4",
+    version="0.1.0.dev5",
     description=(
         "Library for read and write CSV dumps."
     ),
@@ -22,7 +22,7 @@ setup(
         )
     ],
     install_requires=[
-        "light_compressor==0.1.1.dev1",
+        "light_compressor==0.1.1.dev2",
         "pandas>=2.1.0",
         "polars>=0.20.31",
     ],
