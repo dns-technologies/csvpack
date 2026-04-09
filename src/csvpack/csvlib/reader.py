@@ -51,6 +51,7 @@ class CSVReader:
 
         if self.metadata:
             return [col for dct in self.metadata for col, _ in dct.items()]
+
         return self._reader.get_headers()
 
     @property
@@ -70,6 +71,12 @@ class CSVReader:
         """Get number of rows read so far."""
 
         return self._reader.row_count()
+
+    def read_info(self) -> None:
+        """Read info without reading data."""
+
+        for _ in self._reader:
+            continue
 
     def read_row(self) -> Generator[list[Any], None, None]:
         """Read single row."""

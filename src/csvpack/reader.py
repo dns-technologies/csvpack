@@ -135,6 +135,11 @@ class CSVPackReader:
 
         return self.csv_reader.dtypes
 
+    def read_info(self) -> None:
+        """Read info without reading data."""
+
+        self.csv_reader.read_info()
+
     def to_rows(self) -> Generator[list[Any], None, None]:
         """Convert to python objects."""
 

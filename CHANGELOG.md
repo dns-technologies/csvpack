@@ -5,6 +5,8 @@
 * Developer release (not public to pip)
 * Change pyo3 revision to 0.28.3
 * Update depends light-compressor==0.1.1.dev2
+* Add CSVReader.read_info() method
+* Add CSVPackReader.read_info() method
 
 ## 0.1.0.dev4
 
