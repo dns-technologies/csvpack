@@ -90,8 +90,8 @@ compression_method = CompressionMethod.ZSTD   # zstd compression (default)
 - `compression_method` — CompressionMethod object
 - `compression_stream` — BufferedReader object for decompressed data
 - `s3_file` — bool to detect file mode (dump or s3file)
-- `csv_start` — integer offset for start of CSV data
-- `csv_reader` — CSVReader object
+- `_reader_pos` — integer offset for start of CSV data
+- `_reader` — CSVReader object
 - `to_rows()` — Method for reading uncompressed CSV data as generator of Python objects
 - `to_pandas()` — Method for reading uncompressed CSV data as pandas.DataFrame
 - `to_polars(is_lazy=False)` — Method for reading uncompressed CSV data as polars.DataFrame/LazyFrame
@@ -115,8 +115,8 @@ compression_method = CompressionMethod.ZSTD   # zstd compression (default)
 - `dtypes` — List of CSV data types for all columns
 - `compressed_length` — integer packed CSV data length (set to 0 on initialization)
 - `data_length` — integer unpacked CSV data length (set to -1 on initialization)
-- `csv_start` — integer offset for start of CSV data (set to current offset on initialization)
-- `csv_writer` — CSVWriter object
+- `_writer_pos` — integer offset for start of CSV data (set to current offset on initialization)
+- `_writer` — CSVWriter object
 - `init_metadata(metadata)` — Initialize metadata and CSV writer
 - `from_rows(rows)` — Write CSVPack file from Python objects (iterable of rows)
 - `from_pandas(data_frame)` — Write CSVPack file from pandas.DataFrame

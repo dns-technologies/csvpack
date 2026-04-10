@@ -1,5 +1,17 @@
 # Version History
 
+## 0.1.0.dev6
+
+* Developer release (not public to pip)
+* Refactor CSVReader
+* Refactor CSVPackReader
+* Refactor CSVPackWriter
+* Rename CSVPackReader.csv_reader to CSVPackReader._reader
+* Rename CSVPackReader.csv_start to self._reader_pos
+* Rename CSVPackWriter.csv_start to self._writer_pos
+* Rename CSVPackWriter.csv_writer to CSVPackWriter._writer
+* Update README.md
+
 ## 0.1.0.dev5
 
 * Developer release (not public to pip)

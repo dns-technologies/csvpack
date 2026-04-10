@@ -46,9 +46,9 @@ class CSVPackReader:
     compression_method: CompressionMethod
     compression_stream: BufferedReader
     s3_file: bool
-    csv_start: int
-    csv_reader: CSVReader
     schema_overrides: dict[str, Object]
+    _reader: CSVReader
+    _reader_pos: int
 
     def __init__(
         self,
@@ -88,7 +88,7 @@ class CSVPackReader:
             self.compressed_length,
             self.data_length,
         ) == Signature.S3_FILE_INTEGERS
-        self.csv_start = self.fileobj.tell()
+        self._reader_pos = self.fileobj.tell()
 
         if self.s3_file:
             self.fileobj.seek(-Size.S3_TAIL, Size.SEEK_END)
@@ -100,14 +100,14 @@ class CSVPackReader:
                 Fmt.COMPRESS_LENGTH,
                 self.fileobj.read(Size.S3_TAIL)
             )
-            self.fileobj.seek(self.csv_start)
+            self.fileobj.seek(self._reader_pos)
             self.fileobj = LimitedReader(self.fileobj, limit)
 
         self.compression_stream = define_reader(
             self.fileobj,
             self.compression_method,
         )
-        self.csv_reader = CSVReader(
+        self._reader = CSVReader(
             self.compression_stream,
             self.metadata.csv_metadata,
             self.metadata.delimiter,
@@ -127,38 +127,38 @@ class CSVPackReader:
     def columns(self) -> list[str]:
         """Get column names."""
 
-        return self.csv_reader.columns
+        return self._reader.columns
 
     @property
     def dtypes(self) -> list[str]:
         """Get column data types."""
 
-        return self.csv_reader.dtypes
+        return self._reader.dtypes
 
     def read_info(self) -> None:
         """Read info without reading data."""
 
-        self.csv_reader.read_info()
+        self._reader.read_info()
 
     def to_rows(self) -> Generator[list[Any], None, None]:
         """Convert to python objects."""
 
-        return self.csv_reader.to_rows()
+        return self._reader.to_rows()
 
     def to_pandas(self) -> PdFrame:
         """Convert to pandas.DataFrame."""
 
         return PdFrame(
-            data=self.csv_reader.to_rows(),
-            columns=self.csv_reader.columns,
+            data=self._reader.to_rows(),
+            columns=self._reader.columns,
         ).astype(self.metadata.pandas_astype)
 
     def to_polars(self, is_lazy: bool = False) -> PlFrame | LfFrame:
         """Convert to polars.DataFrame."""
 
         return ISLAZY[is_lazy](
-            data=self.csv_reader.to_rows(),
-            schema=self.csv_reader.columns,
+            data=self._reader.to_rows(),
+            schema=self._reader.columns,
             schema_overrides=self.schema_overrides,
             infer_schema_length=None,
         )
@@ -167,7 +167,7 @@ class CSVPackReader:
         """Get raw unpacked csv data as bytes."""
 
         if self.compression_method is CompressionMethod.NONE:
-            self.compression_stream.seek(self.csv_start)
+            self.compression_stream.seek(self._reader_pos)
         else:
             self.compression_stream.seek(Size.SEEK_SET)
 
@@ -177,7 +177,7 @@ class CSVPackReader:
     def tell(self) -> int:
         """Return current position."""
 
-        return self.csv_reader.tell()
+        return self._reader.tell()
 
     def close(self) -> None:
         """Close file object."""

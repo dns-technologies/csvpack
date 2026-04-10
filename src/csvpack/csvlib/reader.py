@@ -9,6 +9,14 @@ from ..common.repr import csvlib_repr
 class CSVReader:
     """CSV dump reader with lazy iterator."""
 
+    fileobj: BufferedReader
+    metadata: list[dict[str, str]]
+    delimiter: str
+    quote_char: str
+    encoding: str
+    has_header: bool
+    _reader: RustCsvReader
+
     def __init__(
         self,
         fileobj: BufferedReader,

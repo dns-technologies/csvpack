@@ -35,15 +35,15 @@ from .csvlib import CSVWriter
 class CSVPackWriter:
     """Class for write CSVPack format."""
 
-    metadata: CSVPackMeta | None = None
+    metadata: CSVPackMeta | None
     fileobj: BufferedWriter | None
     compressed_length: int
     data_length: int
     compression_method: CompressionMethod
     compression_level: int
     s3_file: bool
-    csv_start: int | None = 0
-    csv_writer: CSVWriter | None = None
+    _writer: CSVWriter | None
+    _writer_pos: int
 
     def __init__(
         self,
@@ -62,9 +62,12 @@ class CSVPackWriter:
         self.compression_method = compression_method
         self.compression_level = compression_level
         self.s3_file = s3_file
+        self._writer = None
 
         if self.fileobj:
-            self.csv_start = self.fileobj.tell()
+            self._writer_pos = self.fileobj.tell()
+        else:
+            self._writer_pos = 0
 
         if self.metadata:
             self.init_metadata(self.metadata)
@@ -73,19 +76,19 @@ class CSVPackWriter:
     def columns(self) -> list[str]:
         """Get column names."""
 
-        if not self.csv_writer:
+        if not self._writer:
             return []
 
-        return self.csv_writer.columns
+        return self._writer.columns
 
     @property
     def dtypes(self) -> list[str]:
         """Get column data types."""
 
-        if not self.csv_writer:
+        if not self._writer:
             return []
 
-        return self.csv_writer.dtypes
+        return self._writer.dtypes
 
     def __validate_write_state(self) -> None:
         """Validate expected parameters."""
@@ -111,10 +114,10 @@ class CSVPackWriter:
     def __write_header(self) -> None:
         """Write CSVPack header."""
 
-        if not self.csv_writer:
+        if not self._writer:
             self.init_metadata(self.metadata)
 
-        self.csv_start = self.fileobj.tell()
+        self._writer_pos = self.fileobj.tell()
 
         metadata_bytes = bytes(self.metadata)
         metadata_zlib = compress(metadata_bytes)
@@ -131,7 +134,7 @@ class CSVPackWriter:
             compression_method,
             s3_marker,
         ):
-            self.csv_start += self.fileobj.write(data)
+            self._writer_pos += self.fileobj.write(data)
 
     def __write_data(self, bytes_data: Iterable[bytes]) -> None:
         """Write CSV data."""
@@ -148,13 +151,13 @@ class CSVPackWriter:
                 self.fileobj.write(chunk)
             self.data_length = self.fileobj.tell() - start_pos
 
-        self.compressed_length = self.fileobj.tell() - self.csv_start
+        self.compressed_length = self.fileobj.tell() - self._writer_pos
 
     def __write_trailer(self) -> None:
         """Write compress length and data length."""
 
         if not self.s3_file:
-            self.fileobj.seek(self.csv_start - Size.S3_TAIL)
+            self.fileobj.seek(self._writer_pos - Size.S3_TAIL)
 
         self.fileobj.write(
             pack(
@@ -177,7 +180,7 @@ class CSVPackWriter:
         else:
             raise Error.CSVPackMetadataError("Metadata object error.")
 
-        self.csv_writer = CSVWriter(
+        self._writer = CSVWriter(
             self.metadata.csv_metadata,
             self.metadata.delimiter,
             self.metadata.quote_char,
@@ -195,7 +198,7 @@ class CSVPackWriter:
         if not self.metadata:
             raise Error.CSVPackMetadataError("Metadata not defined.")
 
-        return self.from_bytes(self.csv_writer.from_rows(rows))
+        return self.from_bytes(self._writer.from_rows(rows))
 
     def from_pandas(
         self,
@@ -238,12 +241,12 @@ class CSVPackWriter:
     def tell(self) -> int:
         """Return current position."""
 
-        return self.csv_writer.tell()
+        return self._writer.tell()
 
     def close(self) -> None:
         """Close file object."""
 
-        self.csv_writer.close()
+        self._writer.close()
 
     def __repr__(self) -> str:
         """String representation of CSVPackWriter."""
