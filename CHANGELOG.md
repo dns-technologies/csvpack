@@ -3,6 +3,10 @@
 ## 0.1.0.dev6
 
 * Developer release (not public to pip)
+* Add CSVPackReader.num_columns property method
+* Add CSVPackReader.num_rows property method
+* Add CSVPackWriter.num_columns property method
+* Add CSVPackWriter.num_rows property method
 * Refactor CSVReader
 * Refactor CSVPackReader
 * Refactor CSVPackWriter

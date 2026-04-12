@@ -135,6 +135,18 @@ class CSVPackReader:
 
         return self._reader.dtypes
 
+    @property
+    def num_columns(self) -> int:
+        """Get number of columns."""
+
+        return len(self.columns)
+
+    @property
+    def num_rows(self) -> int:
+        """Get number of rows read so far."""
+
+        return self._reader.num_rows
+
     def read_info(self) -> None:
         """Read info without reading data."""
 
