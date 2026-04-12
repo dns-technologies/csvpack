@@ -253,7 +253,7 @@ class CSVPackWriter:
     def tell(self) -> int:
         """Return current position."""
 
-        return self._writer.tell()
+        return self._writer.tell() or self.data_length
 
     def close(self) -> None:
         """Close file object."""

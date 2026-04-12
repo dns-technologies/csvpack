@@ -14,6 +14,7 @@
 * Rename CSVPackReader.csv_start to self._reader_pos
 * Rename CSVPackWriter.csv_start to self._writer_pos
 * Rename CSVPackWriter.csv_writer to CSVPackWriter._writer
+* Improve CSVPackWriter.tell() method
 * Update README.md
 
 ## 0.1.0.dev5
