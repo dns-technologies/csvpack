@@ -7,6 +7,7 @@
 * Add CSVPackReader.num_rows property method
 * Add CSVPackWriter.num_columns property method
 * Add CSVPackWriter.num_rows property method
+* Add Iterable data for CSVPackMeta
 * Refactor CSVReader
 * Refactor CSVPackReader
 * Refactor CSVPackWriter

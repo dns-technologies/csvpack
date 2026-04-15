@@ -291,3 +291,19 @@ PD_TYPE = {
     ptype.FLOAT: "float64",
     ptype.STR: "string",
 }
+ITERABLE = {
+    "array": ptype.LIST,
+    "datetime64": ptype.DATETIME,
+    "Decimal": ptype.FLOAT,
+    "dict": ptype.JSON,
+    "tuple": ptype.LIST,
+    ptype.BOOL: ptype.BOOL,
+    ptype.BYTES: ptype.BYTES,
+    ptype.DATE: ptype.DATE,
+    ptype.DATETIME: ptype.DATETIME,
+    ptype.FLOAT: ptype.FLOAT,
+    ptype.INT: ptype.INT,
+    ptype.LIST: ptype.LIST,
+    ptype.TIME: ptype.TIME,
+    ptype.UUID: ptype.UUID,
+}
