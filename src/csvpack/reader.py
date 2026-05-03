@@ -16,12 +16,10 @@ from pandas import DataFrame as PdFrame
 from polars import (
     DataFrame as PlFrame,
     LazyFrame as LfFrame,
-    Object,
 )
 
 from .common import (
     errors as Error,
-    ptype as PType,
     signatures as Signature,
     sizes as Size,
     struct_formats as Fmt,
@@ -29,11 +27,6 @@ from .common import (
 from .common.metadata import CSVPackMeta
 from .common.repr import csvpack_repr
 from .csvlib import CSVReader
-
-ISLAZY = {
-    False: PlFrame,
-    True: LfFrame,
-}
 
 
 class CSVPackReader:
@@ -46,7 +39,6 @@ class CSVPackReader:
     compression_method: CompressionMethod
     compression_stream: BufferedReader
     s3_file: bool
-    schema_overrides: dict[str, Object]
     _reader: CSVReader
     _reader_pos: int
 
@@ -115,12 +107,6 @@ class CSVPackReader:
             self.metadata.encoding,
             self.metadata.has_header,
         )
-        self.schema_overrides = {
-            column: Object
-            for columns in self.metadata.csv_metadata
-            for column, ptype in columns.items()
-            if PType.LIST in ptype
-        }
         self._str = None
 
     @property
@@ -160,20 +146,12 @@ class CSVPackReader:
     def to_pandas(self) -> PdFrame:
         """Convert to pandas.DataFrame."""
 
-        return PdFrame(
-            data=self._reader.to_rows(),
-            columns=self._reader.columns,
-        ).astype(self.metadata.pandas_astype)
+        return self._reader.to_pandas()
 
     def to_polars(self, is_lazy: bool = False) -> PlFrame | LfFrame:
         """Convert to polars.DataFrame."""
 
-        return ISLAZY[is_lazy](
-            data=self._reader.to_rows(),
-            schema=self._reader.columns,
-            schema_overrides=self.schema_overrides,
-            infer_schema_length=None,
-        )
+        return self._reader.to_polars(is_lazy)
 
     def to_bytes(self) -> Generator[bytes, None, None]:
         """Get raw unpacked csv data as bytes."""

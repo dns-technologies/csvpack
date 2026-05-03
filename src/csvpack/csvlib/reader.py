@@ -2,8 +2,24 @@ from collections.abc import Generator
 from io import BufferedReader
 from typing import Any
 
+from pandas import DataFrame as PdFrame
+from polars import (
+    DataFrame as PlFrame,
+    LazyFrame as LfFrame,
+    Object,
+)
+
 from .core import RustCsvReader
+from ..common import ptype as PType
+from ..common.dtype import PD_TYPE
 from ..common.repr import csvlib_repr
+from ..common.sizes import CHUNK_SIZE
+
+
+ISLAZY = {
+    False: PlFrame,
+    True: LfFrame,
+}
 
 
 class CSVReader:
@@ -15,6 +31,8 @@ class CSVReader:
     quote_char: str
     encoding: str
     has_header: bool
+    schema_overrides: dict[str, Object]
+    pandas_astype: dict[str, str]
     _reader: RustCsvReader
 
     def __init__(
@@ -34,6 +52,17 @@ class CSVReader:
         self.encoding = encoding
         self.has_header = has_header
         self.metadata = metadata or []
+        self.schema_overrides = {
+            column: Object
+            for columns in self.metadata
+            for column, ptype in columns.items()
+            if PType.LIST in ptype
+        }
+        self.pandas_astype = {
+            column: PD_TYPE.get(ptype)
+            for columns in self.metadata
+            for column, ptype in columns.items()
+        }
         self._reader = RustCsvReader(
             fileobj=self.fileobj,
             metadata=self.metadata,
@@ -97,10 +126,34 @@ class CSVReader:
         for row in self._reader:
             yield row
 
+    def to_pandas(self) -> PdFrame:
+        """Convert to pandas.DataFrame."""
+
+        return PdFrame(
+            data=self.to_rows(),
+            columns=self.columns,
+        ).astype(self.pandas_astype)
+
+    def to_polars(self, is_lazy: bool = False) -> PlFrame | LfFrame:
+        """Convert to polars.DataFrame."""
+
+        return ISLAZY[is_lazy](
+            data=self.to_rows(),
+            schema=self.columns,
+            schema_overrides=self.schema_overrides,
+            infer_schema_length=None,
+        )
+
+    def to_bytes(self) -> Generator[bytes, None, None]:
+        """Get raw unpacked csv data as bytes."""
+
+        while chunk := self.fileobj.read(CHUNK_SIZE):
+            yield chunk
+
     def tell(self) -> int:
         """Return current position."""
 
-        return self._reader.tell()
+        return self._reader.tell() or self.fileobj.tell()
 
     def close(self) -> None:
         """Close file object."""

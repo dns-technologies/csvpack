@@ -1,7 +1,10 @@
 use pyo3::prelude::*;
 use pyo3::IntoPyObjectExt;
 use crate::json_parser::{parse_binary_to_python, parse_json_to_python};
-use chrono::{NaiveDate, NaiveDateTime, NaiveTime, Datelike, Timelike};
+use chrono::{
+    NaiveDate, NaiveDateTime, NaiveTime, Datelike, Timelike,
+    FixedOffset, DateTime as ChronoDateTime,
+};
 
 
 pub struct TypeConverter {
@@ -10,6 +13,8 @@ pub struct TypeConverter {
     datetime_class: Option<Py<PyAny>>,
     time_class: Option<Py<PyAny>>,
     uuid_module: Option<Py<PyAny>>,
+    timezone_class: Option<Py<PyAny>>,
+    timedelta_class: Option<Py<PyAny>>,
 }
 
 
@@ -21,6 +26,8 @@ impl TypeConverter {
             datetime_class: None,
             time_class: None,
             uuid_module: None,
+            timezone_class: None,
+            timedelta_class: None,
         }
     }
 
@@ -32,6 +39,13 @@ impl TypeConverter {
             Some(datetime.getattr("datetime")?.unbind().into())
         };
         self.time_class = Some(datetime.getattr("time")?.unbind().into());
+        self.timezone_class = {
+            Some(datetime.getattr("timezone")?.unbind().into())
+        };
+        self.timedelta_class = {
+            Some(datetime.getattr("timedelta")?.unbind().into())
+        };
+
         let uuid = py.import("uuid")?;
         self.uuid_module = Some(uuid.unbind().into());
         Ok(())
@@ -58,7 +72,6 @@ impl TypeConverter {
                 } else {
                     Ok(parsed)
                 }
-
             }
             "int" => {
                 match value.parse::<i64>() {
@@ -208,54 +221,53 @@ impl TypeConverter {
         py: Python<'_>,
         value: &str,
     ) -> PyResult<Py<PyAny>> {
-        let processed_value = if let Some(dot_pos) = value.find('.') {
-            let after_dot = &value[dot_pos + 1..];
-            if after_dot.chars().all(|c| c.is_ascii_digit()) {
-                if after_dot.len() > 6 {
-                    let trimmed = &after_dot[..6];
-                    format!("{}.{}", &value[..dot_pos], trimmed)
-                } else {
-                    value.to_string()
-                }
-            } else {
-                value.to_string()
-            }
-        } else {
-            value.to_string()
-        };
+        let processed_value = self.normalize_fractional_seconds(value);
 
-        let formats_with_micros = [
+        let formats_tz_micros = [
+            "%Y-%m-%d %H:%M:%S.%f%#z",
+            "%Y-%m-%dT%H:%M:%S.%f%#z",
+            "%Y-%m-%d %H:%M:%S.%f %#z",
+        ];
+
+        for fmt in &formats_tz_micros {
+            if let Ok(dt) = ChronoDateTime::parse_from_str(
+                &processed_value,
+                fmt,
+            ) {
+                return self.create_datetime_with_tz(py, &dt);
+            }
+        }
+
+        let formats_micros = [
             "%Y-%m-%d %H:%M:%S.%f",
             "%Y-%m-%dT%H:%M:%S.%f",
         ];
 
-        for fmt in &formats_with_micros {
+        for fmt in &formats_micros {
             if let Ok(dt) = NaiveDateTime::parse_from_str(
                 &processed_value,
                 fmt,
             ) {
-                if let Some(datetime_class) = &self.datetime_class {
-                    let datetime_class_bound = datetime_class.bind(py);
-                    let micros = dt.and_utc().timestamp_subsec_micros();
-                    let result = datetime_class_bound.call_method1(
-                        "__new__",
-                        (
-                            datetime_class_bound.clone(),
-                            dt.year(),
-                            dt.month(),
-                            dt.day(),
-                            dt.hour(),
-                            dt.minute(),
-                            dt.second(),
-                            micros,
-                        )
-                    )?;
-                    return Ok(result.unbind().into());
-                }
+                return self.create_naive_datetime(py, &dt);
             }
         }
 
-        let formats_without_micros = [
+        let formats_tz = [
+            "%Y-%m-%d %H:%M:%S%#z",
+            "%Y-%m-%dT%H:%M:%S%#z",
+            "%Y-%m-%d %H:%M%#z",
+        ];
+
+        for fmt in &formats_tz {
+            if let Ok(dt) = ChronoDateTime::parse_from_str(
+                &processed_value,
+                fmt,
+            ) {
+                return self.create_datetime_with_tz(py, &dt);
+            }
+        }
+
+        let formats_basic = [
             "%Y-%m-%d %H:%M:%S",
             "%Y-%m-%dT%H:%M:%S",
             "%Y-%m-%d %H:%M",
@@ -263,28 +275,118 @@ impl TypeConverter {
             "%d/%m/%Y %H:%M:%S",
         ];
 
-        for fmt in &formats_without_micros {
+        for fmt in &formats_basic {
             if let Ok(dt) = NaiveDateTime::parse_from_str(
                 &processed_value,
                 fmt,
             ) {
-                if let Some(datetime_class) = &self.datetime_class {
-                    let datetime_class_bound = datetime_class.bind(py);
-                    let result = datetime_class_bound.call_method1(
-                        "__new__",
-                        (
-                            datetime_class_bound.clone(),
-                            dt.year(),
-                            dt.month(),
-                            dt.day(),
-                            dt.hour(),
-                            dt.minute(),
-                            dt.second(),
-                        )
-                    )?;
-                    return Ok(result.unbind().into());
-                }
+                return self.create_naive_datetime(py, &dt);
             }
+        }
+
+        Ok(py.None())
+    }
+
+    fn normalize_fractional_seconds(&self, value: &str) -> String {
+        if let Some(dot_pos) = value.find('.') {
+            let after_dot = &value[dot_pos + 1..];
+            let end_of_digits = after_dot.find(|c: char| {
+                !c.is_ascii_digit()
+            }).unwrap_or(after_dot.len());
+
+            let digits = &after_dot[..end_of_digits];
+            let rest = &after_dot[end_of_digits..];
+
+            if digits.len() > 6 {
+                format!("{}.{}{}", &value[..dot_pos], &digits[..6], rest)
+            } else if digits.len() < 6 {
+                format!(
+                    "{}.{:0<6}{}",
+                    &value[..dot_pos],
+                    digits,
+                    rest
+                )
+            } else {
+                value.to_string()
+            }
+        } else {
+            value.to_string()
+        }
+    }
+
+    fn create_datetime_with_tz(
+        &self,
+        py: Python<'_>,
+        dt: &ChronoDateTime<FixedOffset>,
+    ) -> PyResult<Py<PyAny>> {
+        let datetime_class = match &self.datetime_class {
+            Some(c) => c.bind(py),
+            None => return Ok(py.None()),
+        };
+
+        let timezone_class = match &self.timezone_class {
+            Some(c) => c.bind(py),
+            None => return Ok(py.None()),
+        };
+
+        let timedelta_class = match &self.timedelta_class {
+            Some(c) => c.bind(py),
+            None => return Ok(py.None()),
+        };
+
+        let offset = dt.offset();
+        let offset_seconds = offset.local_minus_utc();
+        let tz_delta = timedelta_class.call_method1(
+            "__new__",
+            (timedelta_class.clone(), 0, offset_seconds),
+        )?;
+
+        let tz_info = timezone_class.call_method1(
+            "__new__",
+            (timezone_class.clone(), tz_delta),
+        )?;
+
+        let micros = dt.timestamp_subsec_nanos() / 1000;
+        let result = datetime_class.call_method1(
+            "__new__",
+            (
+                datetime_class.clone(),
+                dt.year(),
+                dt.month(),
+                dt.day(),
+                dt.hour(),
+                dt.minute(),
+                dt.second(),
+                micros,
+                tz_info,
+            ),
+        )?;
+
+        Ok(result.unbind().into())
+    }
+
+    fn create_naive_datetime(
+        &self,
+        py: Python<'_>,
+        dt: &NaiveDateTime,
+    ) -> PyResult<Py<PyAny>> {
+        if let Some(datetime_class) = &self.datetime_class {
+            let datetime_class_bound = datetime_class.bind(py);
+            let micros = dt.and_utc().timestamp_subsec_nanos() / 1000;
+            let result = datetime_class_bound.call_method1(
+                "__new__",
+                (
+                    datetime_class_bound.clone(),
+                    dt.year(),
+                    dt.month(),
+                    dt.day(),
+                    dt.hour(),
+                    dt.minute(),
+                    dt.second(),
+                    micros,
+                ),
+            )?;
+            return Ok(result.unbind().into());
         }
 
         Ok(py.None())

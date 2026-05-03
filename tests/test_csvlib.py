@@ -700,6 +700,310 @@ class TestCSVEdgeCases:
         assert read_none_rows[0][1] is None  # noqa: S101
         assert read_none_rows[0][2] is None  # noqa: S101
 
+    def test_datetime_with_microseconds(self):
+        """Test datetime parsing with microseconds."""
+
+        metadata = [
+            {"dt": "datetime"},
+        ]
+        rows = [
+            (datetime.datetime(2026, 1, 1, 23, 28, 57, 234),),
+            (datetime.datetime(2026, 1, 1, 23, 28, 57, 123),),
+            (datetime.datetime(2026, 1, 1, 0, 0, 0, 1),),
+            (datetime.datetime(2026, 1, 1, 0, 0, 0, 999),),
+            (datetime.datetime(2026, 1, 1, 0, 0, 0, 0),),
+        ]
+        buffer = io.BytesIO()
+        writer = CSVWriter(metadata=metadata, fileobj=buffer)
+        writer.write(rows)
+        result = buffer.getvalue().decode("utf-8")
+        lines = result.strip().split("\n")
+        assert len(lines) == 6  # noqa: S101
+        assert "2026-01-01 23:28:57.000234" in result  # noqa: S101
+        assert "2026-01-01 23:28:57.000123" in result  # noqa: S101
+        assert "2026-01-01 00:00:00.000001" in result  # noqa: S101
+        assert "2026-01-01 00:00:00.000999" in result  # noqa: S101
+        assert "2026-01-01 00:00:00" in result  # noqa: S101
+
+    def test_datetime_with_microseconds_and_timezone(self):
+        """Test datetime parsing with microseconds and timezone."""
+
+        metadata = [
+            {"dt": "datetime"},
+        ]
+        tz_plus10 = datetime.timezone(
+            datetime.timedelta(hours=10),
+        )
+        tz_minus5 = datetime.timezone(
+            datetime.timedelta(hours=-5),
+        )
+        tz_plus530 = datetime.timezone(
+            datetime.timedelta(hours=5, minutes=30),
+        )
+        rows = [
+            (
+                datetime.datetime(
+                    2026, 1, 1, 23, 28, 57, 234,
+                    tzinfo=tz_plus10,
+                ),
+            ),
+            (
+                datetime.datetime(
+                    2026, 1, 1, 23, 28, 57, 123,
+                    tzinfo=tz_minus5,
+                ),
+            ),
+            (
+                datetime.datetime(
+                    2026, 1, 1, 0, 0, 0, 1,
+                    tzinfo=tz_plus530,
+                ),
+            ),
+            (
+                datetime.datetime(
+                    2026, 1, 1, 0, 0, 0, 0,
+                    tzinfo=tz_plus10,
+                ),
+            ),
+        ]
+        buffer = io.BytesIO()
+        writer = CSVWriter(metadata=metadata, fileobj=buffer)
+        writer.write(rows)
+        result = buffer.getvalue().decode("utf-8")
+        lines = result.strip().split("\n")
+        assert len(lines) == 5  # noqa: S101
+        assert "2026-01-01 23:28:57.000234+10:00" in result  # noqa: S101
+        assert "2026-01-01 23:28:57.000123-05:00" in result  # noqa: S101
+        assert "2026-01-01 00:00:00.000001+05:30" in result  # noqa: S101
+        assert "2026-01-01 00:00:00+10:00" in result  # noqa: S101
+
+    def test_time_with_microseconds(self):
+        """Test time parsing with microseconds."""
+
+        metadata = [
+            {"t": "time"},
+        ]
+        rows = [
+            (datetime.time(23, 28, 57, 234),),
+            (datetime.time(23, 28, 57, 123),),
+            (datetime.time(0, 0, 0, 1),),
+            (datetime.time(0, 0, 0, 999),),
+            (datetime.time(0, 0, 0, 0),),
+        ]
+        buffer = io.BytesIO()
+        writer = CSVWriter(metadata=metadata, fileobj=buffer)
+        writer.write(rows)
+        result = buffer.getvalue().decode("utf-8")
+        lines = result.strip().split("\n")
+        assert len(lines) == 6  # noqa: S101
+        assert "23:28:57.000234" in result  # noqa: S101
+        assert "23:28:57.000123" in result  # noqa: S101
+        assert "00:00:00.000001" in result  # noqa: S101
+        assert "00:00:00.000999" in result  # noqa: S101
+        assert "00:00:00" in result  # noqa: S101
+
+    def test_datetime_roundtrip_with_microseconds(self):
+        """Test full roundtrip of datetime with microseconds."""
+
+        metadata = [
+            {"id": "int"},
+            {"created_at": "datetime"},
+            {"updated_at": "datetime"},
+        ]
+        tz_plus3 = datetime.timezone(
+            datetime.timedelta(hours=3),
+        )
+        rows = [
+            (
+                1,
+                datetime.datetime(
+                    2026, 1, 1, 23, 28, 57, 234,
+                ),
+                datetime.datetime(
+                    2026, 1, 1, 23, 28, 57, 123,
+                    tzinfo=tz_plus3,
+                ),
+            ),
+            (
+                2,
+                datetime.datetime(
+                    2026, 1, 1, 0, 0, 0, 1,
+                ),
+                datetime.datetime(
+                    2026, 1, 1, 0, 0, 0, 0,
+                ),
+            ),
+            (
+                3,
+                datetime.datetime(
+                    2026, 1, 1, 0, 0, 0, 999,
+                    tzinfo=tz_plus3,
+                ),
+                datetime.datetime(
+                    2026, 1, 1, 0, 0, 0, 500,
+                ),
+            ),
+        ]
+        buffer = io.BytesIO()
+        writer = CSVWriter(metadata=metadata, fileobj=buffer)
+        writer.write(rows)
+        buffer.seek(0)
+        reader = CSVReader(
+            fileobj=buffer,
+            metadata=metadata,
+            delimiter=",",
+            has_header=True,
+        )
+        read_rows = list(reader)
+        assert len(read_rows) == 3  # noqa: S101
+
+        for i, (original, read) in enumerate(zip(rows, read_rows)):
+            assert read[0] == original[0]  # noqa: S101
+
+    def test_datetime_from_csv_with_microseconds(self):
+        """Test parsing datetime strings with microseconds from CSV."""
+
+        csv_data = (
+            b"dt\n"
+            b"2026-01-01 23:28:57.234\n"
+            b"2026-01-01 23:28:57.123\n"
+            b"2026-01-01 00:00:00.001\n"
+            b"2026-01-01 00:00:00.999\n"
+            b"2026-01-01 00:00:00\n"
+        )
+        buffer = io.BytesIO(csv_data)
+        metadata = [{"dt": "datetime"}]
+        reader = CSVReader(
+            fileobj=buffer,
+            metadata=metadata,
+            delimiter=",",
+            has_header=True,
+        )
+        rows = list(reader)
+        assert len(rows) == 5  # noqa: S101
+        assert rows[0][0] == datetime.datetime(  # noqa: S101
+            2026, 1, 1, 23, 28, 57, 234,
+        )
+        assert rows[1][0] == datetime.datetime(  # noqa: S101
+            2026, 1, 1, 23, 28, 57, 123,
+        )
+        assert rows[2][0] == datetime.datetime(  # noqa: S101
+            2026, 1, 1, 0, 0, 0, 1,
+        )
+        assert rows[3][0] == datetime.datetime(  # noqa: S101
+            2026, 1, 1, 0, 0, 0, 999,
+        )
+        assert rows[4][0] == datetime.datetime(  # noqa: S101
+            2026, 1, 1, 0, 0, 0, 0,
+        )
+
+    def test_datetime_from_csv_with_microseconds_and_timezone(self):
+        """Test parsing datetime strings with microseconds and
+        timezone from CSV."""
+
+        csv_data = (
+            b"dt\n"
+            b"2026-01-01 23:28:57.234+10:00\n"
+            b"2026-01-01 23:28:57.123+10:00\n"
+            b"2026-01-01 00:00:00.001-05:00\n"
+            b"2026-01-01 00:00:00.999+05:30\n"
+            b"2026-01-01 00:00:00+10:00\n"
+        )
+        buffer = io.BytesIO(csv_data)
+        metadata = [{"dt": "datetime"}]
+        reader = CSVReader(
+            fileobj=buffer,
+            metadata=metadata,
+            delimiter=",",
+            has_header=True,
+        )
+        rows = list(reader)
+        assert len(rows) == 5  # noqa: S101
+
+        tz_plus10 = datetime.timezone(
+            datetime.timedelta(hours=10),
+        )
+        tz_minus5 = datetime.timezone(
+            datetime.timedelta(hours=-5),
+        )
+        tz_plus530 = datetime.timezone(
+            datetime.timedelta(hours=5, minutes=30),
+        )
+
+        assert rows[0][0] == datetime.datetime(  # noqa: S101
+            2026, 1, 1, 23, 28, 57, 234,
+            tzinfo=tz_plus10,
+        )
+        assert rows[1][0] == datetime.datetime(  # noqa: S101
+            2026, 1, 1, 23, 28, 57, 123,
+            tzinfo=tz_plus10,
+        )
+        assert rows[2][0] == datetime.datetime(  # noqa: S101
+            2026, 1, 1, 0, 0, 0, 1,
+            tzinfo=tz_minus5,
+        )
+        assert rows[3][0] == datetime.datetime(  # noqa: S101
+            2026, 1, 1, 0, 0, 0, 999,
+            tzinfo=tz_plus530,
+        )
+        assert rows[4][0] == datetime.datetime(  # noqa: S101
+            2026, 1, 1, 0, 0, 0, 0,
+            tzinfo=tz_plus10,
+        )
+
+    def test_datetime_microseconds_edge_cases(self):
+        """Test edge cases for datetime microseconds parsing."""
+
+        metadata = [{"dt": "datetime"}]
+        csv_data = (
+            b"dt\n"
+            b"2026-01-01 23:28:57.1\n"
+            b"2026-01-01 23:28:57.12\n"
+            b"2026-01-01 23:28:57.123\n"
+            b"2026-01-01 23:28:57.1234\n"
+            b"2026-01-01 23:28:57.12345\n"
+            b"2026-01-01 23:28:57.123456\n"
+            b"2026-01-01 23:28:57.1234567\n"
+            b"2026-01-01 23:28:57.12345678\n"
+            b"2026-01-01 23:28:57.123456789\n"
+        )
+        buffer = io.BytesIO(csv_data)
+        reader = CSVReader(
+            fileobj=buffer,
+            metadata=metadata,
+            delimiter=",",
+            has_header=True,
+        )
+        rows = list(reader)
+        assert len(rows) == 9  # noqa: S101
+        assert rows[0][0] == datetime.datetime(  # noqa: S101
+            2026, 1, 1, 23, 28, 57, 100,
+        )
+        assert rows[1][0] == datetime.datetime(  # noqa: S101
+            2026, 1, 1, 23, 28, 57, 120,
+        )
+        assert rows[2][0] == datetime.datetime(  # noqa: S101
+            2026, 1, 1, 23, 28, 57, 123,
+        )
+        assert rows[3][0] == datetime.datetime(  # noqa: S101
+            2026, 1, 1, 23, 28, 57, 123,
+        )
+        assert rows[4][0] == datetime.datetime(  # noqa: S101
+            2026, 1, 1, 23, 28, 57, 123,
+        )
+        assert rows[5][0] == datetime.datetime(  # noqa: S101
+            2026, 1, 1, 23, 28, 57, 123,
+        )
+        assert rows[6][0] == datetime.datetime(  # noqa: S101
+            2026, 1, 1, 23, 28, 57, 123,
+        )
+        assert rows[7][0] == datetime.datetime(  # noqa: S101
+            2026, 1, 1, 23, 28, 57, 123,
+        )
+        assert rows[8][0] == datetime.datetime(  # noqa: S101
+            2026, 1, 1, 23, 28, 57, 123,
+        )
+
 
 if __name__ == "__main__":
     pytest.main([__file__, "-svv"])

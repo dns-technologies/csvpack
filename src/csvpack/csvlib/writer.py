@@ -2,6 +2,12 @@ from collections.abc import Generator, Iterable
 from io import BufferedWriter
 from typing import Any
 
+from pandas import DataFrame as PdFrame
+from polars import (
+    DataFrame as PlFrame,
+    LazyFrame as LfFrame,
+)
+
 from .core import RustCsvWriter
 from ..common.repr import csvlib_repr
 
@@ -76,6 +82,34 @@ class CSVWriter:
         for chunk in self._writer:
             yield chunk
 
+    def from_pandas(
+        self,
+        data_frame: PdFrame,
+    ) -> int:
+        """Convert pandas.DataFrame to CSV format."""
+
+        return self.from_rows(data_frame.itertuples(index=False))
+
+    def from_polars(
+        self,
+        data_frame: PlFrame | LfFrame,
+    ) -> int:
+        """Convert polars.DataFrame to CSV format."""
+
+        if data_frame.__class__ is LfFrame:
+            data_frame = data_frame.collect(engine="streaming")
+
+        return self.from_rows(data_frame.iter_rows())
+
+    def from_bytes(
+        self,
+        bytes_data: Iterable[bytes],
+    ) -> int:
+        """Write CSV bytes."""
+
+        for chunk in bytes_data:
+            self.fileobj.write(chunk)
+
     def write(self, rows: Iterable[list[Any] | tuple[Any, ...]]) -> None:
         """Write all rows into file."""
 
@@ -88,7 +122,7 @@ class CSVWriter:
     def tell(self) -> int:
         """Return current position."""
 
-        return self._writer.tell()
+        return self._writer.tell() or self.fileobj.tell()
 
     def close(self) -> None:
         """Close file object."""

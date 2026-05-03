@@ -15,7 +15,6 @@ from typing import (
 from pandas import DataFrame as PdFrame
 from polars import DataFrame as PlFrame
 
-from .dtype import PD_TYPE
 from .finder import from_dtypes
 
 
@@ -43,16 +42,6 @@ class CSVPackMeta(NamedTuple):
     quote_char: str = '"'
     encoding: str = "utf-8"
     has_header: bool = False
-
-    @property
-    def pandas_astype(self) -> dict[str, str]:
-        """Make pandas dtypes from columns."""
-
-        return {
-            column: PD_TYPE.get(ptype)
-            for columns in self.csv_metadata
-            for column, ptype in columns.items()
-        }
 
     @classmethod
     def from_params(
