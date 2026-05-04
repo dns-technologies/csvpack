@@ -22,7 +22,7 @@ setup(
         )
     ],
     install_requires=[
-        "light_compressor==0.1.1.dev2",
+        "light_compressor==0.1.1.dev3",
         "pandas>=2.1.0",
         "polars>=0.20.31",
     ],

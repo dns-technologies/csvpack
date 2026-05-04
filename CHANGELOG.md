@@ -3,10 +3,7 @@
 ## 0.2.0.dev0
 
 * Developer release (not public to pip)
-* Add support for datetime parsing with microseconds
-* Add support for datetime parsing with microseconds and timezone offset
-* Add support for time parsing with microseconds
-* Add pytests for datetime and time with microseconds
+* Add build wheels for manylinux aarch64
 * Add CSVReader.schema_overrides attribute
 * Add CSVReader.pandas_astype attribute
 * Add CSVReader.to_pandas() method
@@ -15,11 +12,17 @@
 * Add CSVWriter.from_pandas() method
 * Add CSVWriter.from_polars() method
 * Add CSVWriter.from_bytes() method
+* Add pytests for datetime and time with microseconds
+* Add support for datetime parsing with microseconds
+* Add support for datetime parsing with microseconds and timezone offset
+* Add support for time parsing with microseconds
 * Delete CSVPackReader.schema_overrides attribute
 * Delete CSVPackReader.pandas_astype attribute
 * Improve CSVReader.tell() method
 * Improve CSVWriter.tell() method
 * Remove CSVPackMeta.pandas_astype property method
+* Update build_wheels.yml
+* Update depends light-compressor==0.1.1.dev3
 
 ## 0.1.0.dev6
 
